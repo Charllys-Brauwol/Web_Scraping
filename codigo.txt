@@ -1,0 +1,94 @@
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.chrome.options import Options
+import time
+import os
+import glob
+
+# Configurar o diretório e o nome do arquivo desejado
+diretorio_destino = "C:\\Users\\charl\\Downloads\\Sec" 
+nome_do_arquivo = "sec.xlsx"  # Substitua pelo nome desejado e extensão
+
+# Configurar o WebDriver
+chrome_options = Options()
+chrome_options.add_experimental_option("prefs", {
+    "download.default_directory": diretorio_destino,
+    "download.prompt_for_download": False,
+    "download.directory_upgrade": True,
+    "safebrowsing.enabled": True,
+})
+
+driver = webdriver.Chrome(options=chrome_options)
+
+url = "https://obras.paineis.gov.br/extensions/painel-obras/painel-obras.html"
+driver.get(url)
+
+# Tempo para a página carregar 
+time.sleep(5)
+
+# Localizar e clicar no primeiro filtro
+seletor_do_campo = "fltr-orgao-sup"
+campo_input = WebDriverWait(driver, 10).until(
+    EC.element_to_be_clickable((By.ID, seletor_do_campo))
+)
+campo_input.click()
+
+# Aguardar o campo de pesquisa aparecer
+novo_seletor_do_campo = "Pesquisar na caixa de listagem"
+novo_campo_input = WebDriverWait(driver, 10).until(
+    EC.presence_of_element_located((By.XPATH, f"//input[@placeholder='{novo_seletor_do_campo}']"))
+)
+
+# Inserir texto SEC. ESP. DE AGRIC. FAM. E DESENV. AGRARIO
+texto_para_escrever = "SEC"
+novo_campo_input.send_keys(texto_para_escrever)
+
+# Seleciona os itens
+novo_campo_input.send_keys(Keys.ENTER)
+
+time.sleep(5)
+
+# Confirma a seleção
+seletor_do_botao = "button[title='Confirmar seleção']"
+botao = WebDriverWait(driver, 10).until(
+    EC.visibility_of_element_located((By.CSS_SELECTOR, seletor_do_botao))
+)
+botao.click()
+
+time.sleep(10)
+
+# Identifica todos os arquivos no diretório e os exclui
+arquivos_no_diretorio = glob.glob(os.path.join(diretorio_destino, '*'))
+for arquivo in arquivos_no_diretorio:
+    os.remove(arquivo)
+
+# Seleciona o botão de download da planilha
+seletor_do_link = "a[title='Exportar dados da tabela Detalhes das Obras']"
+link_exportacao = WebDriverWait(driver, 10).until(
+    EC.visibility_of_element_located((By.CSS_SELECTOR, seletor_do_link))
+)
+link_exportacao.click()
+
+# Aguarda tempo suficiente para o download ser iniciado
+time.sleep(5)
+
+# Fecha o navegador
+driver.quit()
+
+# Aguarda até que o arquivo seja completamente baixado
+arquivos_no_diretorio = glob.glob(os.path.join(diretorio_destino, '*.xlsx.crdownload'))
+while arquivos_no_diretorio:
+    time.sleep(1)
+    arquivos_no_diretorio = glob.glob(os.path.join(diretorio_destino, '*.xlsx.crdownload'))
+
+# Identifica o arquivo mais recente
+arquivos_no_diretorio = glob.glob(os.path.join(diretorio_destino, '*.xlsx'))
+if arquivos_no_diretorio:
+    arquivo_mais_recente = max(arquivos_no_diretorio, key=os.path.getctime)
+
+    # Renomeia o arquivo
+    novo_caminho_do_arquivo = os.path.join(diretorio_destino, nome_do_arquivo)
+    os.rename(arquivo_mais_recente, novo_caminho_do_arquivo)
