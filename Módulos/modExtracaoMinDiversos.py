@@ -50,8 +50,7 @@ for i in range(0, len(linhas), 2):
     try:
         # Aguarda e localiza o elemento "Órgão Superior" pelo texto exato
         orgao_superior = WebDriverWait(driver, 10).until(
-        EC.element_to_be_clickable((By.XPATH, "//h6[text()='Órgão Superior']"))
-)
+        EC.element_to_be_clickable((By.XPATH, "//h6[text()='Órgão Superior']")))
 
         # Clica no elemento "Órgão Superior"
         orgao_superior.click()
