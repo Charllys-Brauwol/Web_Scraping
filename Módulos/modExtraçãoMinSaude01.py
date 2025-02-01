@@ -1,18 +1,12 @@
 ##########################PARTE DO MIN. CIDADES E MIN. DA EDUCAÇÃO########################################
 
-
-import os
-import glob
 import time
-import pandas as pd
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
 
 with open("pesquisasaude.txt", "r", encoding="utf-8") as file:
     linhas = file.read().splitlines()
