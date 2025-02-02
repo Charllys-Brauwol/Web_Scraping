@@ -11,13 +11,13 @@ from selenium.webdriver.chrome.options import Options
 with open("pesquisasaude2.txt", "r", encoding="utf-8") as file:
     linhas = file.read().splitlines()
 
-# Certificar-se de que há um número par de linhas
+# Certificar-se de que há um quarteto de linhas
 if len(linhas) % 4 != 0:
     raise ValueError(
         "O arquivo deve conter pares consecutivos de linhas, cada par representando um órgão e um termo de pesquisa."
     )
 
-# Iterar sobre pares consecutivos de linhas
+# Iterar sobre o quarteto de linhas
 for i in range(0, len(linhas), 3):
     orgaosup = linhas[i]
     termoorgsup = linhas[i + 1]
