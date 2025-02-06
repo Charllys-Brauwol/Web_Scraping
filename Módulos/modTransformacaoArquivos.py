@@ -4,7 +4,7 @@ import pandas as pd
 from geopy.geocoders import Nominatim
 
 # Configuração do diretório base
-diretorio_base = r"C:\Users\Charllys_Brauwol\Downloads\Arquivos_BD"
+diretorio_base = r"C:\\Users\\Charllys_Brauwol\\Downloads\\Arquivos_BD"
 
 # Obtém a data atual
 data_atual = datetime.datetime.today()
