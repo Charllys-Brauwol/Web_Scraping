@@ -36,7 +36,7 @@ for i in range(0, len(linhas), 2):
 
     driver = webdriver.Chrome(options=chrome_options)
 
-    url = "https://obras.paineis.gov.br/extensions/obras/obras.html"
+    url = "https://dd-publico.serpro.gov.br/extensions/obras/obras.html"
     driver.get(url)
 
     time.sleep(5)

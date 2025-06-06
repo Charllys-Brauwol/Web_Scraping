@@ -41,7 +41,7 @@ for i in range(0, len(linhas), 3):
     try:
         driver = webdriver.Chrome(options=chrome_options)
 
-        url = "https://obras.paineis.gov.br/extensions/obras/obras.html"
+        url = "https://dd-publico.serpro.gov.br/extensions/obras/obras.html"
         driver.get(url)
 
         # Aguarda e localiza o elemento "Órgão Superior" pelo texto exato
