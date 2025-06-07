@@ -1,0 +1,25 @@
+2025-06-07 14:59:14,022 - ERROR - Erro inesperado na automação para MINISTERIO_DAS_CIDADES_3 - cidade - OUTRAS: Message: invalid session id: session deleted as the browser has closed the connection
+from disconnected: not connected to DevTools
+  (Session info: chrome=137.0.7151.69)
+Stacktrace:
+	GetHandleVerifier [0x0x7ff7eafcfea5+79173]
+	GetHandleVerifier [0x0x7ff7eafcff00+79264]
+	(No symbol) [0x0x7ff7ead89e5a]
+	(No symbol) [0x0x7ff7ead75c25]
+	(No symbol) [0x0x7ff7ead9ac44]
+	(No symbol) [0x0x7ff7eae103c5]
+	(No symbol) [0x0x7ff7eae30922]
+	(No symbol) [0x0x7ff7eae08743]
+	(No symbol) [0x0x7ff7eadd14c1]
+	(No symbol) [0x0x7ff7eadd2253]
+	GetHandleVerifier [0x0x7ff7eb29a2dd+3004797]
+	GetHandleVerifier [0x0x7ff7eb29472d+2981325]
+	GetHandleVerifier [0x0x7ff7eb2b3380+3107360]
+	GetHandleVerifier [0x0x7ff7eafeaa2e+188622]
+	GetHandleVerifier [0x0x7ff7eaff22bf+219487]
+	GetHandleVerifier [0x0x7ff7eafd8df4+115860]
+	GetHandleVerifier [0x0x7ff7eafd8fa9+116297]
+	GetHandleVerifier [0x0x7ff7eafbf558+11256]
+	BaseThreadInitThunk [0x0x7ffde009e8d7+23]
+	RtlUserThreadStart [0x0x7ffde15dc5dc+44]
+
