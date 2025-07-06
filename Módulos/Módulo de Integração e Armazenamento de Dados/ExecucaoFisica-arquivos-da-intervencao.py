@@ -1,6 +1,6 @@
 import requests
 
-idUnico = "6477.23-84"
+idUnico = "42210.24-81"
 
 url = "https://api.obrasgov.gestao.gov.br/obrasgov/api/execucao-fisica/arquivos-da-intervencao"
 
