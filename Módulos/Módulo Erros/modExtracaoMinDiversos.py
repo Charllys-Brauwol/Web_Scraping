@@ -59,7 +59,7 @@ if not verificar_conexao_internet():
     sys.exit(1)
 
 try:
-    with open("pesquisaautomatica.txt", "r", encoding="utf-8") as file:
+    with open(f"D:\Mestrado\Orientador\Código de Web Scraping\Módulos\pesquisaautomatica.txt", "r", encoding="utf-8") as file:
         linhas = file.read().splitlines()
 except FileNotFoundError:
     logger.error("O arquivo 'pesquisaautomatica.txt' não foi encontrado.")

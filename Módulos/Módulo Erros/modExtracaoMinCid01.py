@@ -11,7 +11,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.options import Options
 
 data_atual = datetime.now().strftime("%Y-%m-%d")
-log_filename = f"erros_cidades_educacao.{data_atual}.log"
+log_filename = f"erros_cidades1.{data_atual}.log"
 
 log_handler = logging.FileHandler(log_filename, encoding="utf-8")
 log_handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
@@ -58,28 +58,29 @@ if not verificar_conexao_internet():
 
 try:
     with open(
-        f"D:\Mestrado\Orientador\Código de Web Scraping\Módulos\pesquisacidadeeeducacao.txt",
+        f"D:\Mestrado\Orientador\Código de Web Scraping\Módulos\pesquisacidade1.txt",
         "r",
         encoding="utf-8",
     ) as file:
         linhas = file.read().splitlines()
 except FileNotFoundError:
-    logger.error("O arquivo 'pesquisacidadeeeducacao.txt' não foi encontrado.")
+    logger.error("O arquivo 'pesquisacidade1.txt' não foi encontrado.")
     print(
         "ERRO: Arquivo 'pesquisacidadeeeducacao.txt' não encontrado. Verifique o log."
     )
     sys.exit(1)
 
 
-if len(linhas) % 3 != 0:
-    error_message = "O arquivo deve conter grupos de 3 linhas (Órgão Superior, Termo Órgão Superior, Termo Situação Atual)."
+if len(linhas) % 4 != 0:
+    error_message = "O arquivo deve conter grupos de 4 linhas (Órgão Superior, Termo Órgão Superior, Ano da Obra, Termo Situação Atual)."
     logger.error(error_message)
     raise ValueError(error_message)
 
-for i in range(0, len(linhas), 3):
+for i in range(0, len(linhas), 4):
     orgaosup = linhas[i]
     termoorgsup = linhas[i + 1]
-    termosituacao = linhas[i + 2]
+    anoobra = linhas[i + 2]
+    termosituacao = linhas[i + 3]
 
     diretorio_destino = (
         f"C:\\Users\\Charllys_Brauwol\\Downloads\\Arquivos_BD\\{orgaosup}"
@@ -113,7 +114,7 @@ for i in range(0, len(linhas), 3):
                 or ("TimeoutException" in str(e) and "loading" in str(e).lower())
             ):
                 logger.error(
-                    f"Erro de rede ao acessar URL para {orgaosup} - {termoorgsup} - {termosituacao}: {e}"
+                    f"Erro de rede ao acessar URL para {orgaosup} - {termoorgsup} - {anoobra} - {termosituacao}: {e}"
                 )
                 print(
                     f"ERRO DE REDE para {orgaosup} - {termoorgsup}. O navegador não conseguiu acessar a URL. Verifique a conexão."
@@ -133,6 +134,37 @@ for i in range(0, len(linhas), 3):
         orgao_superior.click()
 
         print(f"Filtro 'Órgão Superior' selecionado para {orgaosup}.")
+
+        time.sleep(5)
+
+        novo_campo_input = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located(
+                (By.CSS_SELECTOR, "input[data-testid='search-input-field']")
+            )
+        )
+
+        time.sleep(5)
+
+        texto_para_escrever = termoorgsup
+        novo_campo_input.send_keys(texto_para_escrever)
+
+        novo_campo_input.send_keys(Keys.ENTER)
+
+        time.sleep(5)
+
+        seletor_do_botao = "button[title='Confirmar seleção']"
+        botao = WebDriverWait(driver, 10).until(
+            EC.visibility_of_element_located((By.CSS_SELECTOR, seletor_do_botao))
+        )
+        botao.click()
+
+        ano_obra = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.XPATH, "//h6[text()='fltr-ano-inicio']"))
+        )
+
+        ano_obra.click()
+
+        print(f"Filtro 'Ano da Obra' selecionado para {ano_obra}.")
 
         time.sleep(5)
 
@@ -191,15 +223,17 @@ for i in range(0, len(linhas), 3):
 
         botao_exportar.click()
 
-        print(f"Exportação iniciada para {orgaosup} - {termoorgsup} - {termosituacao}.")
+        print(
+            f"Exportação iniciada para {orgaosup} - {termoorgsup} - {anoobra} - {termosituacao}."
+        )
         time.sleep(10)
 
     except Exception as e:
         logger.error(
-            f"Erro inesperado na automação para {orgaosup} - {termoorgsup} - {termosituacao}: {str(e)}"
+            f"Erro inesperado na automação para {orgaosup} - {termoorgsup} -  {anoobra} - {termosituacao}: {str(e)}"
         )
         print(
-            f"Erro inesperado na automação para {orgaosup} - {termoorgsup} - {termosituacao}. Verifique o arquivo de log para mais detalhes."
+            f"Erro inesperado na automação para {orgaosup} - {termoorgsup} -  {anoobra} - {termosituacao}. Verifique o arquivo de log para mais detalhes."
         )
 
     finally:

@@ -67,7 +67,7 @@ if not verificar_conexao_internet():
 
 # Ler a lista de órgãos e termos de pesquisa do arquivo de texto
 try:
-    with open("pesquisasaude.txt", "r", encoding="utf-8") as file:
+    with open(f"D:\Mestrado\Orientador\Código de Web Scraping\Módulos\pesquisasaude.txt", "r", encoding="utf-8") as file:
         linhas = file.read().splitlines()
 except FileNotFoundError:
     logger.error("O arquivo 'pesquisasaude.txt' não foi encontrado.")
