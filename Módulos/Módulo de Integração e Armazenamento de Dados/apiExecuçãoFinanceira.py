@@ -5,7 +5,7 @@ import requests
 
 # ID de exemplo (você pode trocar por outro)
 
-id_projeto = "42210.24-81"
+id_projeto = "90915.12-38"
 
 # Endpoint correto da API
 url = "https://api.obrasgov.gestao.gov.br/obrasgov/api/execucao-financeira"

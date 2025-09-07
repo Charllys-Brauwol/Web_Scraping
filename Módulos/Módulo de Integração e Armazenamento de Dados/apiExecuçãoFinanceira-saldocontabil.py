@@ -4,7 +4,7 @@ import requests
 
 
 # ID de exemplo (você pode trocar por outro)
-ugEmitente = "158133"
+ugEmitente = "810023"
 
 # Endpoint correto da API
 url = "https://api.obrasgov.gestao.gov.br/obrasgov/api/execucao-financeira/saldo-contabil"
