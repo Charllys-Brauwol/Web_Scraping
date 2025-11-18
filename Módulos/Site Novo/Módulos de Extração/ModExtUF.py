@@ -65,7 +65,7 @@ try:
 except FileNotFoundError:
     logger.error("O arquivo 'estados.txt' não foi encontrado.")
     print(
-        "ERRO: Arquivo 'pesquisacidadeeeducacao.txt' não encontrado. Verifique o log."
+        "ERRO: Arquivo 'estados.txt' não encontrado. Verifique o log."
     )
     sys.exit(1)
 
@@ -79,7 +79,7 @@ for i in range(0, len(linhas), 1):
     estado = linhas[i]
 
     diretorio_destino = (
-        f"C:\\Users\\Charllys_Brauwol\\Downloads\\Arquivos_BD\\estados\\{estado}"
+        f"C:\\Users\\Charllys_Brauwol\\Downloads\\Arquivos_BD\\ModExtUF\\{estado}"
     )
 
     driver = None
@@ -129,7 +129,7 @@ for i in range(0, len(linhas), 1):
 
         estadoClick.click()
 
-        print(f"Filtro 'Órgão Superior' selecionado para {estado}.")
+        print(f"Filtro 'UF (Localização)' selecionado para {estado}.")
 
         time.sleep(5)
 
