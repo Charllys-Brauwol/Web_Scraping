@@ -139,11 +139,9 @@ for i in range(0, len(linhas), 1):
             )
         )
 
-        time.sleep(5)
-
         texto_para_escrever = estado
         novo_campo_input.send_keys(texto_para_escrever)
-
+        time.sleep(5)
         novo_campo_input.send_keys(Keys.ENTER)
 
         time.sleep(5)
@@ -154,11 +152,14 @@ for i in range(0, len(linhas), 1):
         )
         botao.click()
 
+        time.sleep(15)
+
         botao_exportar = WebDriverWait(driver, 15).until(
             EC.element_to_be_clickable((By.ID, "btn-export-extrato-intervencao"))
         )
-
+        time.sleep(3)
         botao_exportar.click()
+        time.sleep(3)
 
         print(
             f"Exportação iniciada para {estado}."
