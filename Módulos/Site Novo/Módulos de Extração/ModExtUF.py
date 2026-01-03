@@ -159,11 +159,12 @@ for i in range(0, len(linhas), 1):
         )
         time.sleep(3)
         botao_exportar.click()
-        time.sleep(5)
+        time.sleep(3)
+
         print(
             f"Exportação iniciada para {estado}."
         )
-        time.sleep(20)
+        time.sleep(80)
 
     except Exception as e:
         logger.error(
