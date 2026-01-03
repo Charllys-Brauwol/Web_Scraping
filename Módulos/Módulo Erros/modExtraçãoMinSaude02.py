@@ -1,232 +1,206 @@
 import time
 import sys
-import requests  # Necessário para verificar a conexão com a internet
-import logging  # Necessário para o sistema de log
-from datetime import datetime  # Necessário para gerar nomes de arquivo com data
+import requests
+import logging
+import os
+from datetime import datetime
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 
-# --- Configuração do Logger para Geração de Arquivos Diários ---
-# Obtém a data atual no formato YYYY-MM-DD
+# --- Configuração do Logger ---
 data_atual = datetime.now().strftime("%Y-%m-%d")
-# Nome do arquivo de log já com a data, específico para este script
 log_filename = f'erros_saude2_automacao.{data_atual}.log'
 
-# Cria um FileHandler simples.
-# IMPORTANTE: Este handler não faz a rotação automática nem a limpeza de arquivos antigos.
-# Ele sempre cria um novo arquivo por dia (se o script for executado pela primeira vez no dia).
 log_handler = logging.FileHandler(log_filename, encoding='utf-8')
 log_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
 
-# Obtém o logger raiz e adiciona o manipulador
 logger = logging.getLogger()
-logger.setLevel(logging.ERROR)  # Definir o nível mínimo para ERROR
+logger.setLevel(logging.ERROR)
+if logger.hasHandlers():
+    logger.handlers.clear()
 logger.addHandler(log_handler)
-# --- Fim da Configuração do Logger ---
 
-# --- Função para tratamento global de exceções ---
-def handle_exception(exc_type, exc_value, exc_traceback):
-    if issubclass(exc_type, KeyboardInterrupt):
-        # Não registrar KeyboardInterrupt (Ctrl+C)
-        sys.__excepthook__(exc_type, exc_value, exc_traceback)
-        return
-
-    # Registrar o erro não tratado
-    logger.error("Ocorreu um erro não tratado:", exc_info=(exc_type, exc_value, exc_traceback))
-    # Chamar o manipulador de exceções padrão do Python para que o erro ainda seja exibido no console
-    sys.__excepthook__(exc_type, exc_value, exc_traceback)
-
-# Atribui nossa função ao gancho de exceções do sistema
-sys.excepthook = handle_exception
-# --- Fim da Função para tratamento global de exceções ---
-
-# --- Função para verificar a conexão com a internet ---
+# --- Verificação de Internet ---
 def verificar_conexao_internet(url="http://www.google.com", timeout=5):
     try:
         requests.head(url, timeout=timeout)
         return True
-    except requests.ConnectionError:
-        return False
-    except requests.Timeout:
-        return False
-    except Exception as e:
-        logger.error(f"Erro inesperado ao verificar conexão de internet: {e}")
+    except Exception:
         return False
 
 # --- Início do Script Principal ---
 
-# Verificar conexão antes de iniciar a automação
-if not verificar_conexao_internet():
-    logger.error("Sem conexão com a internet. O script será encerrado.")
-    print("ERRO: Sem conexão com a internet. Verifique o arquivo de log para mais detalhes.")
-    sys.exit(1)  # Encerra o script com código de erro
+print("--- Iniciando Script de Automação (SAÚDE 2 - 4 LINHAS) ---")
 
-# Ler a lista de órgãos e termos de pesquisa do arquivo de texto
+if not verificar_conexao_internet():
+    print("ERRO CRÍTICO: Sem conexão com a internet.")
+    sys.exit(1)
+
+# Caminho do arquivo de entrada
+caminho_arquivo = r"D:\Mestrado\Orientador\Código de Web Scraping\Módulos\pesquisasaude2.txt"
+
 try:
-    with open(f"D:\Mestrado\Orientador\Código de Web Scraping\Módulos\pesquisasaude2.txt", "r", encoding="utf-8") as file:
+    with open(caminho_arquivo, "r", encoding="utf-8") as file:
         linhas = file.read().splitlines()
 except FileNotFoundError:
-    logger.error("O arquivo 'pesquisasaude2.txt' não foi encontrado.")
-    print("ERRO: Arquivo 'pesquisasaude2.txt' não encontrado. Verifique o log.")
-    sys.exit(1)  # Sai do script se o arquivo não for encontrado
+    print(f"ERRO CRÍTICO: Arquivo não encontrado em {caminho_arquivo}")
+    sys.exit(1)
 
-# Certificar-se de que há um quarteto de linhas (grupos de 4)
-if len(linhas) % 4 != 0: # Corrigido para 4, conforme a sua leitura de 4 itens por iteração
-    error_message = (
-        "O arquivo 'pesquisasaude2.txt' deve conter grupos de 4 linhas "
-        "(Órgão Superior, Termo Órgão Superior, Órgão, Situação Atual)."
-    )
-    logger.error(error_message)
-    raise ValueError(error_message)  # Ainda eleva o erro para parar a execução
+# Validação de quartetos (4 linhas por item)
+if len(linhas) == 0 or len(linhas) % 4 != 0:
+    print("ERRO: O arquivo deve conter grupos de 4 linhas:\n1. Órgão Sup.\n2. Termo Sup.\n3. Órgão\n4. Situação Atual")
+    sys.exit(1)
 
-# Iterar sobre o quarteto de linhas (grupos de 4)
-for i in range(0, len(linhas), 4): # Corrigido para 4 no range
+print(f"Carregados {len(linhas)//4} itens para processar.")
+
+# Loop de 4 em 4 linhas
+for i in range(0, len(linhas), 4):
     orgaosup = linhas[i]
     termoorgsup = linhas[i + 1]
-    orgao_filtro_valor = linhas[i + 2] # Renomeado para clareza
+    orgao_filtro_valor = linhas[i + 2]
     termosituacao = linhas[i + 3]
 
-    diretorio_destino = (
-        f"C:\\Users\\Charllys_Brauwol\\Downloads\\Arquivos_BD\\Site_Legado\\{orgaosup}"
-    )
-    # nome_do_arquivo = f"{orgaosup}.xlsx" # Esta variável não está sendo usada, pode ser removida se não for necessária
-
-    driver = None  # Inicializa driver como None para garantir que sempre estará definido
+    driver = None
 
     try:
-        # Configurar o WebDriver
-        chrome_options = Options()
-        chrome_options.add_experimental_option(
-            "prefs",
-            {
-                "download.default_directory": diretorio_destino,
-                "download.prompt_for_download": False,
-                "download.directory_upgrade": True,
-                "safeBrowse.enabled": True,
-            },
-        )
-
-        driver = webdriver.Chrome(options=chrome_options)
-
-        url = "https://dd-publico.serpro.gov.br/extensions/obras/obras.html"
+        print(f"\n>>> Processando: {orgaosup} -> {orgao_filtro_valor} -> {termosituacao}")
         
-        # Tentar carregar a URL e capturar erros de rede do Selenium
-        try:
-            driver.get(url)
-        except Exception as e:
-            # Captura a exceção específica que pode indicar problema de rede
-            if "net::ERR_INTERNET_DISCONNECTED" in str(e) or \
-               "net::ERR_NAME_NOT_RESOLVED" in str(e) or \
-               "net::ERR_CONNECTION_REFUSED" in str(e) or \
-               ("TimeoutException" in str(e) and "loading" in str(e).lower()):
-                logger.error(f"Erro de rede ao acessar URL para {orgaosup} - {termoorgsup} - {orgao_filtro_valor} - {termosituacao}: {e}")
-                print(f"ERRO DE REDE para {orgaosup} - {termoorgsup} - {orgao_filtro_valor}. O navegador não conseguiu acessar a URL. Verifique a conexão.")
-                if driver: driver.quit()  # Garante que o driver seja fechado antes de continuar
-                continue  # Pula para a próxima iteração se for erro de rede ao carregar a página
-            else:
-                raise e  # Re-eleva se for outro tipo de erro para ser tratado pelo except mais abaixo
+        diretorio_destino = f"C:\\Users\\Charllys_Brauwol\\Downloads\\Arquivos_BD\\Site_Legado\\{orgaosup}"
+        
+        if not os.path.exists(diretorio_destino):
+            os.makedirs(diretorio_destino)
 
-        time.sleep(5)  # Atraso inicial após carregar a página
+        # --- CONFIGURAÇÃO BLINDADA DO DRIVER ---
+        chrome_options = Options()
+        chrome_options.add_argument("--ignore-certificate-errors") # Ignora erro de site inseguro
+        chrome_options.add_argument("--ignore-ssl-errors")
+        chrome_options.add_argument("--no-sandbox")
+        chrome_options.add_argument("--disable-dev-shm-usage") # Evita crash de memória
+        
+        chrome_options.add_experimental_option("prefs", {
+            "download.default_directory": diretorio_destino,
+            "download.prompt_for_download": False,
+            "download.directory_upgrade": True,
+            "safeBrowse.enabled": True,
+        })
+        
+        chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+        chrome_options.add_experimental_option('useAutomationExtension', False)
 
-        # --- Filtro: Órgão Superior ---
-        orgao_superior = WebDriverWait(driver, 10).until(
+        # INSTALAÇÃO AUTOMÁTICA DO DRIVER (Resolve o erro 'Symbols not available')
+        servico = Service(ChromeDriverManager().install())
+        driver = webdriver.Chrome(service=servico, options=chrome_options)
+        driver.maximize_window()
+
+        # --- NAVEGAÇÃO ---
+        url = "https://dd-publico.serpro.gov.br/extensions/obras/obras.html"
+        driver.get(url)
+
+        time.sleep(15) # Espera carregar
+
+        # ---------------------------------------------------------
+        # FILTRO 1: ÓRGÃO SUPERIOR
+        # ---------------------------------------------------------
+        print("1. Selecionando Órgão Superior...")
+        WebDriverWait(driver, 20).until(
             EC.element_to_be_clickable((By.XPATH, "//h6[text()='Órgão Superior']"))
-        )
-        orgao_superior.click()
-        print(f"Filtro 'Órgão Superior' selecionado para {orgaosup}.")
-        time.sleep(5)
+        ).click()
+        time.sleep(2)
 
-        novo_campo_input = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located(
-                (By.CSS_SELECTOR, "input[data-testid='search-input-field']")
-            )
+        campo = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, "input[data-testid='search-input-field']"))
         )
-        time.sleep(5)
-        texto_para_escrever = termoorgsup
-        novo_campo_input.send_keys(texto_para_escrever)
-        novo_campo_input.send_keys(Keys.ENTER)
-        time.sleep(5)
+        campo.clear()
+        campo.send_keys(termoorgsup)
+        time.sleep(1)
+        campo.send_keys(Keys.ENTER)
+        time.sleep(3)
 
-        seletor_do_botao = "button[title='Confirmar seleção']"
-        botao = WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.CSS_SELECTOR, seletor_do_botao))
-        )
-        botao.click()
-        # --- Fim Filtro: Órgão Superior ---
+        WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.CSS_SELECTOR, "button[title='Confirmar seleção']"))
+        ).click()
+        time.sleep(3)
 
-        # --- Filtro: Órgão ---
-        orgao_filtro = WebDriverWait(driver, 10).until(
+        # ---------------------------------------------------------
+        # FILTRO 2: ÓRGÃO
+        # ---------------------------------------------------------
+        print("2. Selecionando Órgão...")
+        WebDriverWait(driver, 20).until(
             EC.element_to_be_clickable((By.XPATH, "//h6[text()='Órgão']"))
-        )
-        orgao_filtro.click()
-        print(f"Filtro 'Órgão' selecionado para {orgaosup} - {orgao_filtro_valor}.")
+        ).click()
         time.sleep(2)
 
-        novo_campo_input = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located(
-                (By.CSS_SELECTOR, "input[data-testid='search-input-field']")
-            )
+        campo = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, "input[data-testid='search-input-field']"))
         )
-        texto_para_escrever = orgao_filtro_valor
-        novo_campo_input.send_keys(texto_para_escrever)
-        novo_campo_input.send_keys(Keys.ENTER)
-        time.sleep(5)
+        campo.clear()
+        campo.send_keys(orgao_filtro_valor)
+        time.sleep(1)
+        campo.send_keys(Keys.ENTER)
+        time.sleep(3)
 
-        seletor_do_botao = "button[title='Confirmar seleção']"
-        botao = WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.CSS_SELECTOR, seletor_do_botao))
-        )
-        botao.click()
-        # --- Fim Filtro: Órgão ---
+        WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.CSS_SELECTOR, "button[title='Confirmar seleção']"))
+        ).click()
+        time.sleep(3)
 
-        # --- Filtro: Situação Atual ---
-        situacao_atual_filtro = WebDriverWait(driver, 10).until(
+        # ---------------------------------------------------------
+        # FILTRO 3: SITUAÇÃO ATUAL
+        # ---------------------------------------------------------
+        print("3. Selecionando Situação Atual...")
+        WebDriverWait(driver, 20).until(
             EC.element_to_be_clickable((By.XPATH, "//h6[text()='Situação Atual']"))
-        )
-        situacao_atual_filtro.click()
-        print(f"Filtro 'Situação Atual' selecionado para {orgaosup} - {orgao_filtro_valor} - {termosituacao}.")
+        ).click()
         time.sleep(2)
 
-        novo_campo_input = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located(
-                (By.CSS_SELECTOR, "input[data-testid='search-input-field']")
-            )
+        campo = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, "input[data-testid='search-input-field']"))
         )
-        texto_para_escrever = termosituacao
-        novo_campo_input.send_keys(texto_para_escrever)
-        novo_campo_input.send_keys(Keys.ENTER)
+        campo.clear()
+        campo.send_keys(termosituacao)
+        time.sleep(1)
+        campo.send_keys(Keys.ENTER)
+        time.sleep(3)
+
+        WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.CSS_SELECTOR, "button[title='Confirmar seleção']"))
+        ).click()
+        
+        # Espera a tabela processar todos os filtros
         time.sleep(5)
 
-        seletor_do_botao = "button[title='Confirmar seleção']"
-        botao = WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.CSS_SELECTOR, seletor_do_botao))
-        )
-        botao.click()
-        # --- Fim Filtro: Situação Atual ---
-
-        # --- Exportar ---
-        botao_exportar = WebDriverWait(driver, 15).until(
+        # ---------------------------------------------------------
+        # EXPORTAÇÃO
+        # ---------------------------------------------------------
+        print("4. Exportando...")
+        botao_exportar = WebDriverWait(driver, 20).until(
             EC.element_to_be_clickable((By.ID, "btn-export-tbl-detalhes-obras"))
         )
         botao_exportar.click()
 
-        print(f"Exportação iniciada para {orgaosup} - {termoorgsup} - {orgao_filtro_valor} - {termosituacao}.")
-        time.sleep(10)
-        # --- Fim Exportar ---
+        print(f"SUCESSO: Download iniciado.")
+        
+        # Tempo de espera para o download
+        time.sleep(60)
 
     except Exception as e:
-        # Registrar o erro específico da automação Selenium
-        logger.error(f"Erro inesperado na automação para {orgaosup} - {termoorgsup} - {orgao_filtro_valor} - {termosituacao}: {str(e)}")
-        print(f"Erro inesperado na automação para {orgaosup} - {termoorgsup} - {orgao_filtro_valor} - {termosituacao}. Verifique o arquivo de log para mais detalhes.")
+        erro_msg = str(e)
+        logger.error(f"Erro em {orgaosup} (Situação: {termosituacao}): {erro_msg}")
+        print(f"!!! ERRO: {erro_msg}")
 
     finally:
-        # Certifique-se de fechar o navegador, mesmo em caso de exceção
-        if driver:  # Verifica se o driver foi inicializado antes de tentar fechá-lo
-            driver.quit()
+        if driver:
+            try:
+                driver.quit()
+            except:
+                pass
+    
+    time.sleep(3)
 
-    # Adicione um pequeno atraso entre as iterações, se necessário
-    time.sleep(2)
+print("\nProcesso finalizado.")
