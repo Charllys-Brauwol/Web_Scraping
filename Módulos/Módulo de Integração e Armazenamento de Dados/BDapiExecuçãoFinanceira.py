@@ -24,7 +24,7 @@ estados = [
     "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO"
 ]
 
-def get_db_connection():
+def conexaobd():
     """
     Cria e retorna uma conexão com o banco de dados.
     """
@@ -36,7 +36,7 @@ def get_db_connection():
         print(f"Erro ao conectar ao banco de dados '{TARGET_DB_NAME}': {e}")
         return None
 
-def get_project_ids_by_state(engine, estado):
+def obter_id_uf(engine, estado):
     """
     Consulta o banco de dados para obter os 'identificador_único' para um estado específico.
     """
@@ -53,18 +53,18 @@ def get_project_ids_by_state(engine, estado):
         print(f"Erro ao consultar a tabela '{source_table_name}': {e}")
         return []
 
-def fetch_financial_data(project_id):
+def buscar_dados_financeiros(id_projeto):
     """
     Faz a requisição à nova API para um ID de projeto e gerencia a paginação, tratando o erro 429.
     """
-    all_data = []
-    page = 0
-    clean_pid = str(project_id).strip() # Garante a limpeza do ID
+    todos_dados = []
+    pag = 0
+    limpar_pid = str(id_projeto).strip() # Garante a limpeza do ID
     
     while True:
         params = {
-            "idProjetoInvestimento": clean_pid,
-            "pagina": page,
+            "idProjetoInvestimento": limpar_pid,
+            "pagina": pag,
             "tamanhoDaPagina": 100
         }
         try:
@@ -72,7 +72,7 @@ def fetch_financial_data(project_id):
             
             # --- Tratamento de Erro 429 (Rate Limit) ---
             if response.status_code == 429:
-                print(f"!!! ERRO 429 - LIMITE ATINGIDO para {clean_pid}. Esperando 60 segundos...")
+                print(f"!!! ERRO 429 - LIMITE ATINGIDO para {limpar_pid}. Esperando 60 segundos...")
                 time.sleep(60) # Espera 1 minuto
                 continue # Tenta a requisição novamente
             # -------------------------------------------
@@ -86,32 +86,32 @@ def fetch_financial_data(project_id):
             
             # Adiciona o 'identificador_único' a cada item da lista retornada pela API
             for item in content:
-                item['id_unico'] = clean_pid
+                item['id_unico'] = limpar_pid
             
-            all_data.extend(content)
+            todos_dados.extend(content)
             
             if data.get("last", False):
                 break
             
-            page += 1
+            pag += 1
             time.sleep(random.uniform(1, 2)) # Atraso menor entre as páginas
 
         except requests.exceptions.RequestException as e:
-            print(f"AVISO: Erro na requisição para o ID {clean_pid} (página {page}): {e}")
+            print(f"AVISO: Erro na requisição para o ID {limpar_pid} (página {pag}): {e}")
             break
     
-    return all_data
+    return todos_dados
 
-def process_and_load_data():
+def processar_carregar_dados():
     """
     Função principal para orquestrar o processo.
     """
-    engine = get_db_connection()
+    engine = conexaobd()
     if not engine:
         sys.exit(1)
 
     # Nomes das colunas para os registros placeholder
-    column_names = [
+    nomes_colunas = [
         'id_unico', 'nomeEsferaOrcamentaria', 'nomeTipoEmpenho', 'fonteRecurso', 'naturezaDespesa',
         'numeroProcesso', 'descricaoEmpenho', 'planoInterno', 'resultadoPrimario',
         'tipoCredito', 'ugEmitente', 'codigoAmparoLegal', 'informacoesComplementares',
@@ -123,42 +123,42 @@ def process_and_load_data():
     for estado in estados:
         print(f"\n--- Iniciando processamento para o estado: {estado} ---")
         
-        project_ids = get_project_ids_by_state(engine, estado)
-        if not project_ids:
+        ids_projetos = obter_id_uf(engine, estado)
+        if not ids_projetos:
             print(f"Nenhum ID de projeto encontrado para o estado {estado}. Pulando para o próximo.")
             continue
         
-        estado_data = []
-        for pid in project_ids:
+        estado_dados = []
+        for pid in ids_projetos:
             
             # Limpa o ID antes de passar para a função de fetch e para o placeholder
-            clean_pid = str(pid).strip()
+            limpar_pid = str(pid).strip()
             
-            data_from_api = fetch_financial_data(clean_pid)
+            dados_da_api = buscar_dados_financeiros(limpar_pid)
             
-            if data_from_api:
-                print(f"Dados encontrados para o projeto ID: {clean_pid}. Total de registros: {len(data_from_api)}")
-                estado_data.extend(data_from_api)
+            if dados_da_api:
+                print(f"Dados encontrados para o projeto ID: {limpar_pid}. Total de registros: {len(dados_da_api)}")
+                estado_dados.extend(dados_da_api)
             else:
-                print(f"Nenhum dado encontrado para o projeto ID: {clean_pid}. Criando registro placeholder...")
+                print(f"Nenhum dado encontrado para o projeto ID: {limpar_pid}. Criando registro placeholder...")
                 # Cria um registro com '-' em todas as colunas
-                placeholder_record = {col: '-' for col in column_names}
+                registro_vazio = {col: '-' for col in nomes_colunas}
                 # Garante que o ID do projeto esteja correto
-                placeholder_record['id_unico'] = clean_pid
-                placeholder_record['idProjetoInvestimento'] = clean_pid
-                estado_data.append(placeholder_record)
+                registro_vazio['id_unico'] = limpar_pid
+                registro_vazio['idProjetoInvestimento'] = limpar_pid
+                estado_dados.append(registro_vazio)
             
             # --- NOVO AJUSTE: Atraso maior entre cada ID de projeto ---
             # Tempo de espera de 2 a 3 segundos para evitar o erro 429
             time.sleep(random.uniform(2, 3)) 
             # --------------------------------------------------------
 
-        if not estado_data:
+        if not estado_dados:
             print(f"Nenhum dado, nem registro placeholder, encontrado para o estado {estado}. Nenhuma tabela será criada.")
             continue
 
         # Criação do DataFrame com os dados coletados
-        df = pd.DataFrame(estado_data)
+        df = pd.DataFrame(estado_dados)
 
         # Ajusta os nomes das colunas para o formato snake_case
         df = df.rename(columns={
@@ -188,16 +188,16 @@ def process_and_load_data():
         })
 
         # Define o nome da tabela de destino com o padrão 'estados_sigla_...'
-        target_table_name = f'estados_{estado.lower()}_execucaofinanceira_detalhes'
+        nome_tabela = f'estados_{estado.lower()}_execucaofinanceira_detalhes'
 
         try:
-            print(f"\nSalvando {len(df)} registros na tabela '{target_table_name}'...")
-            df.to_sql(name=target_table_name, con=engine, if_exists='replace', index=False)
-            print(f"Dados financeiros de {estado} salvos com sucesso na tabela '{target_table_name}'.")
+            print(f"\nSalvando {len(df)} registros na tabela '{nome_tabela}'...")
+            df.to_sql(name=nome_tabela, con=engine, if_exists='replace', index=False)
+            print(f"Dados financeiros de {estado} salvos com sucesso na tabela '{nome_tabela}'.")
         except Exception as e:
-            print(f"ERRO ao salvar dados na tabela '{target_table_name}': {e}")
+            print(f"ERRO ao salvar dados na tabela '{nome_tabela}': {e}")
     
     print("\nProcessamento de todos os estados concluído.")
 
 if __name__ == "__main__":
-    process_and_load_data()
+    processar_carregar_dados()

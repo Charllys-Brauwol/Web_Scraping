@@ -37,12 +37,12 @@ def get_db_connection():
         print(f"Erro ao conectar ao banco de dados '{TARGET_DB_NAME}': {e}")
         return None
 
-def get_ug_id_pairs_by_state(engine, estado):
+def obter_ug(engine, estado):
     """
     Consulta a tabela de detalhes financeiros para obter pares DISTINTOS de (ug_emitente, id_projeto).
     """
-    source_table_name = f'estados_{estado.lower()}_execucaofinanceira_detalhes'
-    print(f"Buscando pares (UG, ID_UNICO) na tabela '{source_table_name}'...")
+    nome_tabela_origem = f'estados_{estado.lower()}_execucaofinanceira_detalhes'
+    print(f"Buscando pares (UG, ID_UNICO) na tabela '{nome_tabela_origem}'...")
     
     # Busca pares distintos de ug_emitente e id_projeto_investimento
     # Usamos id_projeto_investimento que é o campo que contém o identificador_unico
@@ -50,36 +50,36 @@ def get_ug_id_pairs_by_state(engine, estado):
         SELECT 
             DISTINCT ug_emitente, 
             id_projeto_investimento AS id_unico 
-        FROM {source_table_name} 
+        FROM {nome_tabela_origem} 
         WHERE ug_emitente != '-' AND id_projeto_investimento != '-'
     """
     
     try:
-        df_pairs = pd.read_sql(query, con=engine)
+        df_pares = pd.read_sql(query, con=engine)
         
         # Garante que os valores são strings e limpos
-        df_pairs['ug_emitente'] = df_pairs['ug_emitente'].astype(str).str.strip()
-        df_pairs['id_unico'] = df_pairs['id_unico'].astype(str).str.strip()
+        df_pares['ug_emitente'] = df_pares['ug_emitente'].astype(str).str.strip()
+        df_pares['id_unico'] = df_pares['id_unico'].astype(str).str.strip()
         
-        print(f"Encontrados {len(df_pairs)} pares (UG, ID_UNICO) distintos para o estado de {estado}.")
-        return df_pairs
+        print(f"Encontrados {len(df_pares)} pares (UG, ID_UNICO) distintos para o estado de {estado}.")
+        return df_pares
         
     except Exception as e:
-        print(f"Erro ao consultar a tabela '{source_table_name}'. Verifique se o script anterior foi executado: {e}")
+        print(f"Erro ao consultar a tabela '{nome_tabela_origem}'. Verifique se o script anterior foi executado: {e}")
         return pd.DataFrame()
 
-def fetch_saldo_contabil_data(ug_emitente):
+def obter_dados_financeiros(ug_emitente):
     """
     Faz a requisição à API para um UG Emitente e gerencia a paginação, tratando o erro 429.
     """
-    all_data = []
-    page = 0
-    clean_ug = str(ug_emitente).strip()
+    dados = []
+    pag = 0
+    limpar_ug = str(ug_emitente).strip()
     
     while True:
         params = {
-            "ugEmitente": clean_ug,
-            "pagina": page,
+            "ugEmitente": limpar_ug,
+            "pagina": pag,
             "tamanhoDaPagina": 100
         }
         try:
@@ -87,7 +87,7 @@ def fetch_saldo_contabil_data(ug_emitente):
             
             # --- Tratamento de Erro 429 (Rate Limit) ---
             if response.status_code == 429:
-                print(f"!!! ERRO 429 - LIMITE ATINGIDO para a UG {clean_ug}. Esperando 60 segundos...")
+                print(f"!!! ERRO 429 - LIMITE ATINGIDO para a UG {limpar_ug}. Esperando 60 segundos...")
                 time.sleep(60)
                 continue
             # -------------------------------------------
@@ -98,20 +98,20 @@ def fetch_saldo_contabil_data(ug_emitente):
             content = data.get("content", [])
             if not content:
                 break
-            
-            all_data.extend(content)
-            
+
+            dados.extend(content)
+
             if data.get("last", False):
                 break
             
-            page += 1
+            pag += 1
             time.sleep(random.uniform(1, 2))
 
         except requests.exceptions.RequestException as e:
-            print(f"AVISO: Erro na requisição para a UG {clean_ug} (página {page}): {e}")
+            print(f"AVISO: Erro na requisição para a UG {limpar_ug} (página {pag}): {e}")
             break
     
-    return all_data
+    return dados
 
 def process_and_load_data():
     """
@@ -137,7 +137,7 @@ def process_and_load_data():
         print(f"\n--- Iniciando processamento para o estado: {estado} ---")
         
         # NOVO: Obtém o DataFrame com pares UG e ID_UNICO
-        ug_id_pairs_df = get_ug_id_pairs_by_state(engine, estado)
+        ug_id_pairs_df = obter_ug(engine, estado)
         if ug_id_pairs_df.empty:
             print(f"Nenhum par (UG, ID_UNICO) encontrado para o estado {estado}. Pulando.")
             continue
@@ -148,7 +148,7 @@ def process_and_load_data():
         estado_data = []
         for ug in unique_ugs:
             
-            data_from_api = fetch_saldo_contabil_data(ug)
+            data_from_api = obter_dados_financeiros(ug)
             
             # Se houver dados da API, eles precisam ser associados ao ID_UNICO.
             if data_from_api:
