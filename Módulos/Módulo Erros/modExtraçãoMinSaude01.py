@@ -88,7 +88,7 @@ for i in range(0, len(linhas), 3):
     termoorgsup = linhas[i + 1]
     orgao_filtro_valor = linhas[i + 2] # Renomeado para clareza, pois "orgao" já é uma variável local do Selenium
 
-    diretorio_destino = f"C:\\Users\\Charllys_Brauwol\\Downloads\\Arquivos_BD\\{orgaosup}"
+    diretorio_destino = f"C:\\Users\\Charllys_Brauwol\\Downloads\\Arquivos_BD\\Site_Legado\\{orgaosup}"
     # nome_do_arquivo = f"{orgaosup}.xlsx" # Esta variável não está sendo usada, pode ser removida se não for necessária
 
     driver = None  # Inicializa driver como None para garantir que sempre estará definido

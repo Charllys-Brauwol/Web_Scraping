@@ -91,7 +91,7 @@ for i in range(0, len(linhas), 4): # Corrigido para 4 no range
     termosituacao = linhas[i + 3]
 
     diretorio_destino = (
-        f"C:\\Users\\Charllys_Brauwol\\Downloads\\Arquivos_BD\\{orgaosup}"
+        f"C:\\Users\\Charllys_Brauwol\\Downloads\\Arquivos_BD\\Site_Legado\\{orgaosup}"
     )
     # nome_do_arquivo = f"{orgaosup}.xlsx" # Esta variável não está sendo usada, pode ser removida se não for necessária
 

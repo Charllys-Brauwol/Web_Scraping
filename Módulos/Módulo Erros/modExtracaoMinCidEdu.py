@@ -82,7 +82,7 @@ for i in range(0, len(linhas), 3):
     termosituacao = linhas[i + 2]
 
     diretorio_destino = (
-        f"C:\\Users\\Charllys_Brauwol\\Downloads\\Arquivos_BD\\{orgaosup}"
+        f"C:\\Users\\Charllys_Brauwol\\Downloads\\Arquivos_BD\\Site_Legado\\{orgaosup}"
     )
 
     driver = None

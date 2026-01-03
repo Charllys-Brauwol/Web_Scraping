@@ -77,7 +77,7 @@ for i in range(0, len(linhas), 2):
     driver = None
 
     try:
-        diretorio_destino = f"C:\\Users\\Charllys_Brauwol\\Downloads\\Arquivos_BD\\{orgao}"
+        diretorio_destino = f"C:\\Users\\Charllys_Brauwol\\Downloads\\Arquivos_BD\\Site_Legado\\{orgao}"
 
         chrome_options = Options()
         chrome_options.add_experimental_option("prefs", {
