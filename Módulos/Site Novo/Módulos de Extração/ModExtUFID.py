@@ -182,7 +182,7 @@ for i in range(0, len(linhas), 1):
         if botao_exportar:
             botao_exportar.click()
             print(f"Exportação iniciada para {estado} com os filtros adicionais aplicados. ✅")
-            time.sleep(15) 
+            time.sleep(25) 
         else:
             raise Exception("Botão de exportar (save_alt) não encontrado.")
 

@@ -35,7 +35,7 @@ logger.setLevel(logging.INFO)
 
 # --- CAMINHOS ---
 DIRETORIO_ENTRADA_CSVS = r"C:\Users\Charllys_Brauwol\Downloads\Arquivos_BD\ModExtraUFIDLINK"
-DIRETORIO_SAIDA_BASE = r"C:\Users\Charllys_Brauwol\Downloads\Arquivos_BD\ModExtraUFIDLINK\PDA"
+DIRETORIO_SAIDA_BASE = r"C:\Users\Charllys_Brauwol\Downloads\Arquivos_BD\ModExtraPDA"
 
 URL_INICIAL = "https://idp.transferegov.sistema.gov.br/idp/"
 
