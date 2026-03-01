@@ -26,19 +26,19 @@ def limpar_valor_monetario(valor):
     if pd.isna(valor): return 0.0
     if isinstance(valor, (float, int)): return float(valor)
     
-    val_str = str(valor).strip()
-    val_str = val_str.replace('R$', '').replace('"', '').replace("'", "").strip()
-    if not val_str: return 0.0
+    valor_texto = str(valor).strip()
+    valor_texto = valor_texto.replace('R$', '').replace('"', '').replace("'", "").strip()
+    if not valor_texto: return 0.0
     
     # Lógica BR (1.000,00)
-    if ',' in val_str:
-        if '.' in val_str:
-            if val_str.rfind(',') > val_str.rfind('.'):
-                val_str = val_str.replace('.', '').replace(',', '.')
+    if ',' in valor_texto:
+        if '.' in valor_texto:
+            if valor_texto.rfind(',') > valor_texto.rfind('.'):
+                valor_texto = valor_texto.replace('.', '').replace(',', '.')
         else:
-            val_str = val_str.replace(',', '.')
+            valor_texto = valor_texto.replace(',', '.')
             
-    try: return float(val_str)
+    try: return float(valor_texto)
     except: return 0.0
 
 def extrair_texto_flexivel(linha, chave):
