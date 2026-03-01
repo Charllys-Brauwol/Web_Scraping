@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Logs - {{ formatar_nome(tabela) }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Link corrigido para pasta raiz -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<nav class="navbar navbar-light bg-white shadow-sm mb-4">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/">
+            &larr; Voltar ao Painel
+        </a>
+        <span class="navbar-text fw-bold">
+            Logs do Sistema: {{ formatar_nome(tabela) }}
+        </span>
+    </div>
+</nav>
+
+<div class="container-fluid px-4">
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body py-2">
+            <form class="row g-3 align-items-center">
+                <div class="col-auto">
+                    <label class="fw-bold">Filtrar por Nível:</label>
+                </div>
+                <div class="col-auto">
+                    <a href="?nivel=TODOS" class="btn btn-sm btn-outline-secondary {{ 'active' if not filtro_atual or filtro_atual == 'TODOS' else '' }}">Todos</a>
+                    <a href="?nivel=ERROR" class="btn btn-sm btn-outline-danger {{ 'active' if filtro_atual == 'ERROR' else '' }}">Apenas Erros</a>
+                    <a href="?nivel=INFO" class="btn btn-sm btn-outline-primary {{ 'active' if filtro_atual == 'INFO' else '' }}">Infos</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tabela de Logs -->
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 5%">ID</th>
+                        <th style="width: 15%">Data/Hora</th>
+                        <th style="width: 10%">Nível</th>
+                        <th style="width: 20%">Arquivo</th>
+                        <th style="width: 50%">Mensagem</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr class="log-row-{{ log.nivel }}">
+                        <td>{{ log.id }}</td>
+                        <td class="timestamp">{{ log.data_hora }}</td>
+                        <td>
+                            {% if log.nivel == 'ERROR' %}
+                                <span class="badge bg-danger">ERROR</span>
+                            {% elif log.nivel == 'WARNING' %}
+                                <span class="badge bg-warning text-dark">WARN</span>
+                            {% else %}
+                                <span class="badge bg-primary">INFO</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-truncate" style="max-width: 200px;" title="{{ log.arquivo_origem }}">
+                            {{ log.arquivo_origem }}
+                        </td>
+                        <td>
+                            {% if '\n' in log.mensagem %}
+                                <div class="mb-1 text-danger fw-bold">Erro Multilinha Detectado:</div>
+                                <pre class="stacktrace">{{ log.mensagem }}</pre>
+                            {% else %}
+                                {{ log.mensagem }}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center py-5 text-muted">
+                            Nenhum log encontrado com os filtros atuais.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>

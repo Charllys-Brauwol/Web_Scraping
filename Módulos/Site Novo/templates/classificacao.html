@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Tipologia - GovWorks</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="bg-slate-100 p-4 font-sans text-slate-800">
+
+    <div class="flex justify-between items-center mb-6 bg-white p-3 rounded-xl shadow-sm">
+        <div class="flex items-center gap-4">
+            <div class="relative">
+                <select onchange="location = this.value;" class="bg-slate-100 border border-slate-300 text-slate-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 font-bold cursor-pointer">
+                    <option value="/">📍 Monitoramento Geográfico</option>
+                    <option value="/evolucao">📅 Evolução Temporal</option>
+                    <option value="/financeiros">💰 Investimentos Totais</option>
+                    <option value="/situacao">🚧 Situação das Obras</option>
+                    <option value="/classificacao" selected>🏗️ Tipo e Natureza</option>
+                </select>
+            </div>
+            <h1 class="text-xl font-bold text-slate-600 pl-4 border-l">Classificação das Intervenções</h1>
+        </div>
+        
+        <div class="bg-slate-100 p-1 rounded-lg flex">
+            <button onclick="changeSource('legado')" id="btn-legado" class="active-btn text-xs">🏛️ LEGADO</button>
+            <button onclick="changeSource('novo')" id="btn-novo" class="inactive-btn text-xs ml-1">🆕 NOVO</button>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        <div class="card bg-white p-4 rounded-xl shadow-sm">
+            <h3 class="font-bold text-slate-700 mb-4 border-b pb-2">
+                <i class="fas fa-hammer text-blue-500 mr-2"></i>Tipo de Intervenção
+            </h3>
+            <div class="h-80 flex justify-center">
+                <canvas id="chartNatureza"></canvas>
+            </div>
+            <p class="text-xs text-slate-400 mt-2 text-center">Classificação: Obra Nova, Reforma, Ampliação etc.</p>
+        </div>
+
+        <div class="card bg-white p-4 rounded-xl shadow-sm">
+            <h3 class="font-bold text-slate-700 mb-4 border-b pb-2">
+                <i class="fas fa-users text-emerald-500 mr-2"></i>Função Social (Área)
+            </h3>
+            <div class="h-80">
+                <canvas id="chartFuncao"></canvas>
+            </div>
+            <p class="text-xs text-slate-400 mt-2 text-center">Áreas mais frequentes (Saúde, Educação, Infraestrutura).</p>
+        </div>
+
+    </div>
+
+    <script src="{{ url_for('static', filename='js/classificacao.js') }}"></script>
+</body>
+</html>

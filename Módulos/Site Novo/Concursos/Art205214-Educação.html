@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CF/88 - Educação Completo</title>
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+font-family:'Segoe UI',sans-serif;
+background:linear-gradient(135deg,#667eea,#764ba2);
+display:flex;
+justify-content:center;
+align-items:center;
+min-height:100vh;
+padding:15px;
+color:white;
+}
+.container{
+width:100%;
+max-width:600px;
+background:rgba(255,255,255,0.15);
+backdrop-filter:blur(18px);
+border-radius:20px;
+padding:20px;
+box-shadow:0 15px 35px rgba(0,0,0,0.3);
+}
+h2{text-align:center;margin-bottom:5px;}
+.subtitle{text-align:center;font-size:14px;margin-bottom:20px;opacity:0.8;}
+button{
+padding:12px;
+border:none;
+border-radius:12px;
+margin-top:10px;
+font-size:15px;
+cursor:pointer;
+transition:0.3s;
+}
+.menu-btn{
+width:100%;
+background:white;
+color:#5a4fcf;
+font-weight:bold;
+}
+.hidden{display:none}
+
+/* FLASHCARD */
+.flip-container{perspective:1000px;margin-top:15px;}
+.flipper{
+position:relative;
+width:100%;
+height:240px;
+transform-style:preserve-3d;
+transition:0.6s;
+}
+.flip-container.flip .flipper{transform:rotateY(180deg);}
+.front,.back{
+position:absolute;
+width:100%;
+height:100%;
+background:white;
+color:#333;
+border-radius:15px;
+padding:15px;
+display:flex;
+align-items:center;
+justify-content:center;
+text-align:center;
+backface-visibility:hidden;
+overflow:auto;
+}
+.back{transform:rotateY(180deg);}
+
+/* QUIZ */
+.card{
+background:white;
+color:#333;
+padding:15px;
+border-radius:15px;
+margin-bottom:10px;
+min-height:100px;
+}
+.option{
+width:100%;
+background:rgba(255,255,255,0.9);
+color:#333;
+margin:6px 0;
+}
+.option:hover{transform:scale(1.02)}
+.correct{background:#2ecc71 !important;color:white;}
+.wrong{background:#e74c3c !important;color:white;}
+
+.progress{
+height:8px;
+background:rgba(255,255,255,0.3);
+border-radius:10px;
+margin-bottom:15px;
+overflow:hidden;
+}
+.progress-bar{
+height:8px;
+background:#2ecc71;
+width:0%;
+transition:0.4s;
+}
+.score{text-align:center;margin-top:10px;font-weight:bold;}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>CF/88 - Educação</h2>
+<p class="subtitle">Arts. 205 a 214</p>
+
+<div id="menu">
+<button class="menu-btn" onclick="startFlash()">📘 Flashcards</button>
+<button class="menu-btn" onclick="startQuiz()">📝 Quiz Completo</button>
+</div>
+
+<!-- FLASHCARDS -->
+<div id="flashSection" class="hidden">
+<div class="flip-container" onclick="flipCard()">
+<div class="flipper">
+<div class="front" id="flashFront"></div>
+<div class="back" id="flashBack"></div>
+</div>
+</div>
+<button class="menu-btn" onclick="nextFlash()">Próximo</button>
+<button class="menu-btn" onclick="goMenu()">Voltar</button>
+</div>
+
+<!-- QUIZ -->
+<div id="quizSection" class="hidden">
+<div class="progress"><div class="progress-bar" id="progressBar"></div></div>
+<div class="card" id="question"></div>
+<div id="options"></div>
+<div class="score" id="score"></div>
+<button class="menu-btn" onclick="nextQuestion()">Próxima</button>
+<button class="menu-btn" onclick="goMenu()">Voltar</button>
+</div>
+
+</div>
+
+<script>
+
+/* ================= FLASHCARDS COMPLETOS ================= */
+
+let flashcards=[
+
+{q:"Art.205 – Conceito de educação?",a:"Direito de todos e dever do Estado e da família, promovida com colaboração da sociedade."},
+
+{q:"Art.206 I - Igualdade",a:"Igualdade de condições para acesso e permanência na escola."},
+{q:"Art.206 II - Liberdade",a:"Liberdade de aprender, ensinar, pesquisar e divulgar o pensamento."},
+{q:"Art.206 III - Pluralismo",a:"Pluralismo de ideias e coexistência de instituições públicas e privadas."},
+{q:"Art.206 IV - Gratuidade",a:"Gratuidade do ensino público em estabelecimentos oficiais."},
+{q:"Art.206 V - Valorização",a:"Valorização dos profissionais com ingresso por concurso público."},
+{q:"Art.206 VI - Gestão",a:"Gestão democrática do ensino público."},
+{q:"Art.206 VII - Qualidade",a:"Garantia de padrão de qualidade."},
+{q:"Art.206 VIII - Piso Salarial",a:"Piso salarial profissional nacional."},
+{q:"Art.206 IX - Educação Contínua",a:"Direito à educação e aprendizagem ao longo da vida."},
+{q:"Art.206 Parágrafo único - Carreira",a:"Lei definirá categorias e planos de carreira."},
+
+{q:"Art.207 caput - Autonomia",a:"Autonomia didático-científica, administrativa e financeira das universidades."},
+{q:"Art.207 §1º - Estrangeiros",a:"Podem admitir professores e cientistas estrangeiros."},
+{q:"Art.207 §2º - Instituições de Pesquisa",a:"Aplica-se às instituições de pesquisa científica e tecnológica."},
+
+{q:"Art.208 I - Educação Básica",a:"Educação básica obrigatória dos 4 aos 17 anos."},
+{q:"Art.208 II - Universalização",a:"Universalização progressiva do ensino médio gratuito."},
+{q:"Art.208 III - Atendimento Educacional Especializado",a:"Atendimento educacional especializado às pessoas com deficiência."},
+{q:"Art.208 IV - Infantil",a:"Educação infantil até 5 anos."},
+{q:"Art.208 V - Níveis",a:"Acesso aos níveis mais elevados segundo capacidade."},
+{q:"Art.208 VI - Ensino Noturno",a:"Oferta de ensino noturno regular."},
+{q:"Art.208 VII - Programas Suplementares",a:"Programas suplementares: material, transporte, alimentação e saúde."},
+{q:"Art.208 §1º - Subjetivo",a:"Direito público subjetivo."},
+{q:"Art.208 §2º - Responsabilidade",a:"Responsabilidade da autoridade pelo não oferecimento."},
+{q:"Art.208 §3º - Recenseamento",a:"Recenseamento e chamada escolar."},
+{q:"Art.209 - Privado",a:"Ensino livre à iniciativa privada com normas e autorização."},
+
+{q:"Art.210 caput - Conteúdo",a:"Conteúdos mínimos no ensino fundamental."},
+{q:"Art.210 §1º - Religião",a:"Ensino religioso facultativo."},
+{q:"Art.210 §2º - Língua Portuguesa",a:"Ensino fundamental em língua portuguesa, respeitando línguas indígenas."},
+
+{q:"Art.211 §1º - União",a:"União exerce função redistributiva e supletiva."},
+{q:"Art.211 §2º - Municípios",a:"Municípios atuam no fundamental e infantil."},
+{q:"Art.211 §3º - Estados e DF",a:"Estados e DF atuam no fundamental e médio."},
+{q:"Art.211 §7º - CAQ",a:"Padrão mínimo baseado no CAQ."},
+
+{q:"Art.213 caput - Recursos",a:"Recursos públicos prioritariamente às escolas públicas."},
+{q:"Art.213 §1º - Bolsas",a:"Bolsas quando faltar vaga pública."},
+{q:"Art.213 §2º - Apoio à Pesquisa",a:"Apoio à pesquisa e inovação."},
+
+{q:"Art.214 I-VI - PNE",a:"PNE decenal: erradicação analfabetismo; universalização; qualidade; formação trabalho; promoção científica; meta PIB."}
+
+];
+
+let fIndex=0;
+function startFlash(){
+document.getElementById("menu").classList.add("hidden");
+document.getElementById("flashSection").classList.remove("hidden");
+loadFlash();
+}
+function loadFlash(){
+document.getElementById("flashFront").innerText=flashcards[fIndex].q;
+document.getElementById("flashBack").innerText=flashcards[fIndex].a;
+document.querySelector(".flip-container").classList.remove("flip");
+}
+function flipCard(){
+document.querySelector(".flip-container").classList.toggle("flip");
+}
+function nextFlash(){
+fIndex++;
+if(fIndex>=flashcards.length)fIndex=0;
+loadFlash();
+}
+
+/* ================= QUIZ COMPLETO ================= */
+
+let quiz=[
+
+{q:"Segundo o art.205, a educação é dever de quem?",a:["Somente Estado","Estado e família","Somente sociedade"],c:1,exp:"Art.205."},
+
+{q:"O princípio da igualdade está em qual inciso?",a:["Art.206 I","Art.206 IV","Art.206 VII"],c:0,exp:"Art.206 I."},
+
+{q:"A gratuidade do ensino público está em:",a:["Art.205","Art.206 IV","Art.208"],c:1,exp:"Art.206 IV."},
+
+{q:"Universidades possuem autonomia:",a:["Apenas financeira","Didático-científica e administrativa","Nenhuma"],c:1,exp:"Art.207."},
+
+{q:"Educação básica obrigatória é dos:",a:["4-17","5-18","6-16"],c:0,exp:"Art.208 I."},
+
+{q:"O ensino noturno regular está em:",a:["Art.208 VI","Art.210","Art.211"],c:0,exp:"Art.208 VI."},
+
+{q:"Ensino religioso é:",a:["Obrigatório","Facultativo","Proibido"],c:1,exp:"Art.210 §1º."},
+
+{q:"Municípios atuam prioritariamente em:",a:["Ensino superior","Educação infantil e fundamental","Apenas médio"],c:1,exp:"Art.211 §2º."},
+
+{q:"Recursos públicos vão prioritariamente para:",a:["Privadas lucrativas","Escolas públicas","Empresas"],c:1,exp:"Art.213."},
+
+{q:"O PNE tem duração de:",a:["5 anos","10 anos","20 anos"],c:1,exp:"Art.214."}
+
+];
+
+let score=0,qIndex=0,answered=false;
+
+function startQuiz(){
+document.getElementById("menu").classList.add("hidden");
+document.getElementById("quizSection").classList.remove("hidden");
+score=0;qIndex=0;
+loadQuestion();
+}
+function loadQuestion(){
+answered=false;
+let question=quiz[qIndex];
+document.getElementById("question").innerText=question.q;
+let optDiv=document.getElementById("options");
+optDiv.innerHTML="";
+question.a.forEach((opt,i)=>{
+let btn=document.createElement("button");
+btn.innerText=opt;
+btn.className="option";
+btn.onclick=()=>checkAnswer(i,btn);
+optDiv.appendChild(btn);
+});
+document.getElementById("score").innerText="Pontuação: "+score;
+document.getElementById("progressBar").style.width=(qIndex/quiz.length)*100+"%";
+}
+function checkAnswer(i,btn){
+if(answered)return;
+answered=true;
+let correct=quiz[qIndex].c;
+let buttons=document.querySelectorAll(".option");
+buttons.forEach((b,index)=>{
+b.disabled=true;
+if(index===correct)b.classList.add("correct");
+});
+if(i!==correct)btn.classList.add("wrong");
+if(i===correct)score++;
+document.getElementById("question").innerText+="\n\n✔ "+quiz[qIndex].exp;
+document.getElementById("score").innerText="Pontuação: "+score;
+}
+function nextQuestion(){
+qIndex++;
+if(qIndex>=quiz.length){
+alert("Fim! Pontuação: "+score+"/"+quiz.length);
+goMenu();return;
+}
+loadQuestion();
+}
+function goMenu(){
+document.getElementById("flashSection").classList.add("hidden");
+document.getElementById("quizSection").classList.add("hidden");
+document.getElementById("menu").classList.remove("hidden");
+}
+</script>
+
+</body>
+</html>

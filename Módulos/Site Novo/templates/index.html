@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GovWorks Dashboard</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <style>
+        /* Estilos inline específicos para comportamento de scroll e cursor */
+        .scroll-custom::-webkit-scrollbar { width: 6px; }
+        .scroll-custom::-webkit-scrollbar-track { background: #f1f5f9; }
+        .scroll-custom::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        .scroll-custom::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .cursor-sort { cursor: pointer; user-select: none; }
+        .cursor-sort:hover { color: #2563eb; }
+    </style>
+</head>
+<body class="bg-slate-100 p-4 font-sans text-slate-800">
+
+    <div class="flex flex-col md:flex-row justify-between items-center mb-6 bg-white p-3 rounded-xl shadow-sm sticky top-0 z-30">
+        
+        <div class="flex items-center gap-4 w-full md:w-auto">
+            <div class="relative group w-full md:w-64">
+                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                    <i class="fas fa-bars text-slate-500"></i>
+                </div>
+                <select onchange="location = this.value;" class="bg-slate-50 border border-slate-300 text-slate-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5 font-bold cursor-pointer hover:bg-slate-100 transition">
+                    <option value="/" selected>📍 Monitoramento Geográfico</option>
+                    <option value="/evolucao">📅 Evolução Temporal</option>
+                    <option value="/financeiros">💰 Investimentos Totais</option>
+                    <option value="/situacao">🚧 Situação das Obras</option>
+                    <option value="/classificacao">🏗️ Tipo e Natureza</option>
+                </select>
+            </div>
+
+            <nav class="hidden md:flex text-sm bg-slate-50 px-3 py-2 rounded-md border border-slate-100">
+                <ol class="inline-flex items-center space-x-1">
+                    <li>
+                        <button onclick="voltarParaBrasil()" class="text-slate-600 hover:text-blue-600 font-bold flex items-center">
+                            <i class="fas fa-globe-americas mr-1"></i> BRASIL
+                        </button>
+                    </li>
+                    <li id="crumb-region" class="hidden flex items-center">
+                        <i class="fas fa-chevron-right text-slate-300 mx-2 text-xs"></i>
+                        <button onclick="voltarParaRegiao()" id="crumb-region-text" class="text-slate-600 hover:text-blue-600 font-medium">--</button>
+                    </li>
+                    <li id="crumb-uf" class="hidden flex items-center">
+                        <i class="fas fa-chevron-right text-slate-300 mx-2 text-xs"></i>
+                        <span id="crumb-uf-text" class="text-blue-600 font-bold">--</span>
+                    </li>
+                </ol>
+            </nav>
+        </div>
+        
+        <div class="bg-slate-100 p-1 rounded-lg flex mt-2 md:mt-0">
+            <button onclick="mudarFonte('legado')" id="btn-legado" class="active-btn text-xs px-3 py-1 rounded shadow-sm bg-white font-bold text-blue-600 border">
+                <i class="fas fa-landmark mr-1"></i> LEGADO
+            </button>
+            <button onclick="mudarFonte('novo')" id="btn-novo" class="inactive-btn text-xs ml-1 px-3 py-1 rounded text-slate-500 hover:bg-white hover:shadow-sm transition">
+                <i class="fas fa-rocket mr-1"></i> NOVO
+            </button>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div class="card bg-white p-4 rounded-xl border-l-4 border-blue-500 flex justify-between items-center shadow-sm">
+            <div>
+                <p class="text-slate-400 text-xs font-bold uppercase tracking-wider">Quantidade de Obras</p>
+                <h2 id="total-qtd" class="text-3xl font-bold text-slate-800 mt-1">--</h2>
+            </div>
+            <div class="bg-blue-50 p-3 rounded-full text-blue-500">
+                <i class="fas fa-layer-group text-xl"></i>
+            </div>
+        </div>
+
+        <div class="card bg-white p-4 rounded-xl border-l-4 border-emerald-500 flex justify-between items-center shadow-sm">
+            <div>
+                <p class="text-slate-400 text-xs font-bold uppercase tracking-wider">Valor Total Investido</p>
+                <h2 id="total-valor" class="text-3xl font-bold text-emerald-600 mt-1">--</h2>
+            </div>
+            <div class="bg-emerald-50 p-3 rounded-full text-emerald-500">
+                <i class="fas fa-coins text-xl"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-12 gap-4 mb-6 h-auto md:h-[450px]">
+        
+        <div class="col-span-12 md:col-span-5 card bg-white rounded-xl flex flex-col h-[300px] md:h-full shadow-sm">
+            <div class="p-3 border-b flex justify-between items-center">
+                <h3 id="chart-title" class="font-bold text-slate-700 text-sm">Distribuição Geográfica</h3>
+                <span class="text-xs text-blue-500 bg-blue-50 px-2 py-1 rounded">Navegação</span>
+            </div>
+            <div class="flex-1 relative p-2">
+                <canvas id="navChart"></canvas>
+            </div>
+        </div>
+
+        <div class="col-span-12 md:col-span-7 card bg-white rounded-xl flex flex-col h-[400px] md:h-full shadow-sm">
+            <div class="p-3 border-b bg-slate-50 flex justify-between items-center rounded-t-lg">
+                <h3 id="table-title" class="font-bold text-slate-700 text-sm">Detalhamento</h3>
+                <span class="text-xs text-slate-400 italic">Clique no cabeçalho para ordenar</span>
+            </div>
+            
+            <div class="flex-1 overflow-hidden relative">
+                <div class="absolute inset-0 overflow-y-auto scroll-custom">
+                    <table class="w-full text-left text-xs md:text-sm">
+                        <thead class="bg-white text-slate-500 sticky top-0 shadow-sm z-10">
+                            <tr>
+                                <th class="p-3 bg-slate-50 font-semibold border-b">Nome</th>
+                                <th class="p-3 bg-slate-50 text-right cursor-sort border-b hover:bg-slate-100 transition" onclick="ordenarTabela('qtd')">
+                                    Qtd <i class="fas fa-sort text-xs ml-1 opacity-50"></i>
+                                </th>
+                                <th class="p-3 bg-slate-50 text-right cursor-sort border-b hover:bg-slate-100 transition" onclick="ordenarTabela('valor')">
+                                    Valor <i class="fas fa-sort text-xs ml-1 opacity-50"></i>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body" class="divide-y divide-slate-100">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="works-section" class="card bg-white rounded-xl hidden mb-8 shadow-md border border-slate-200">
+        <div class="p-4 border-b flex justify-between items-center bg-slate-50 rounded-t-lg">
+            <div>
+                <h3 class="font-bold text-lg text-slate-800 flex items-center">
+                    <i class="fas fa-clipboard-list mr-2 text-blue-600"></i> Lista de Obras
+                </h3>
+                <p id="works-subtitle" class="text-xs text-slate-500 mt-1">Selecione um Estado ou Cidade acima para ver os dados.</p>
+            </div>
+            <span id="works-count" class="bg-white border border-slate-200 text-slate-600 text-xs font-bold px-3 py-1 rounded-full shadow-sm">
+                --
+            </span>
+        </div>
+        
+        <div class="overflow-x-auto max-h-[600px] overflow-y-auto scroll-custom">
+            <table class="w-full text-left text-sm">
+                <thead class="bg-white text-slate-500 sticky top-0 shadow-sm z-10">
+                    <tr>
+                        <th class="p-3 w-24 font-semibold border-b">ID</th>
+                        <th class="p-3 font-semibold border-b">Objeto / Descrição</th>
+                        <th class="p-3 font-semibold border-b">Município / Executor</th>
+                        <th class="p-3 font-semibold border-b">Situação</th>
+                        <th class="p-3 text-right font-semibold border-b">Valor</th>
+                    </tr>
+                </thead>
+                <tbody id="works-body" class="divide-y divide-slate-100 bg-white">
+                    <tr>
+                        <td colspan="5" class="p-8 text-center text-slate-400">
+                            <i class="fas fa-spinner fa-spin mr-2"></i> Carregando dados...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
