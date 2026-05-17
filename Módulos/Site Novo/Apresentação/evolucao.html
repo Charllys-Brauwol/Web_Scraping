@@ -1,0 +1,178 @@
+<!DOCTYPE html> <!-- Define que o documento usa HTML5 -->
+<html lang="pt-br"> <!-- Início do HTML e define o idioma como português do Brasil -->
+
+<head> <!-- Cabeçalho da página (configurações invisíveis ao usuário) -->
+    
+    <meta charset="UTF-8"> <!-- Define a codificação de caracteres (permite acentos corretamente) -->
+    
+    <title>Evolução Temporal - GovWorks</title> <!-- Título que aparece na aba do navegador -->
+    
+    <script src="https://cdn.tailwindcss.com"></script> <!-- Importa o Tailwind CSS via CDN (framework de estilos) -->
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Importa o Chart.js para criação de gráficos -->
+    
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet"> <!-- Importa ícones do Font Awesome -->
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"> <!-- Importa CSS personalizado do Flask -->
+
+    <style> <!-- Estilos CSS internos -->
+        
+        .scroll-custom::-webkit-scrollbar { width: 6px; } <!-- Define largura da barra de rolagem -->
+        
+        .scroll-custom::-webkit-scrollbar-track { background: #f1f5f9; } <!-- Cor do fundo da barra -->
+        
+        .scroll-custom::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; } <!-- Cor do "botão" da barra -->
+        
+        .scroll-custom::-webkit-scrollbar-thumb:hover { background: #94a3b8; } <!-- Cor ao passar o mouse -->
+    
+    </style>
+</head>
+
+<body class="bg-slate-100 p-4 font-sans text-slate-800"> <!-- Corpo da página com classes do Tailwind -->
+
+    <!-- Barra superior -->
+    <div class="flex flex-col md:flex-row justify-between items-center mb-6 bg-white p-3 rounded-xl shadow-sm sticky top-0 z-30">
+        
+        <!-- Parte esquerda -->
+        <div class="flex items-center gap-4 w-full md:w-auto">
+            
+            <!-- Menu dropdown -->
+            <div class="relative group w-full md:w-64">
+                
+                <!-- Ícone dentro do select -->
+                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                    <i class="fas fa-bars text-slate-500"></i> <!-- Ícone de menu -->
+                </div>
+
+                <!-- Select de navegação -->
+                <select onchange="location = this.value;" class="bg-slate-50 border border-slate-300 text-slate-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5 font-bold cursor-pointer hover:bg-slate-100 transition">
+                    
+                    <option value="/">📍 Monitoramento Geográfico</option> <!-- Opção 1 -->
+                    
+                    <option value="/evolucao" selected>📅 Evolução Temporal</option> <!-- Página atual -->
+                    
+                    <option value="/financeiros">💰 Investimentos Totais</option> <!-- Página financeira -->
+                    
+                    <option value="/situacao">🚧 Situação das Obras</option> <!-- Página de situação -->
+                    
+                    <option value="/classificacao">🏗️ Tipo e Natureza</option> <!-- Página de classificação -->
+                
+                </select>
+            </div>
+
+            <!-- Título lateral -->
+            <h1 class="text-xl font-bold text-slate-600 pl-4 border-l hidden md:block">
+                Análise de Tendências <!-- Título da página -->
+            </h1>
+        </div>
+        
+        <!-- Botões de troca de fonte de dados -->
+        <div class="bg-slate-100 p-1 rounded-lg flex mt-2 md:mt-0">
+            
+            <!-- Botão legado -->
+            <button onclick="changeSource('legado')" id="btn-legado" class="active-btn text-xs px-3 py-1 rounded shadow-sm bg-white font-bold text-blue-600 border">
+                <i class="fas fa-landmark mr-1"></i> LEGADO <!-- Ícone + texto -->
+            </button>
+            
+            <!-- Botão novo -->
+            <button onclick="changeSource('novo')" id="btn-novo" class="inactive-btn text-xs ml-1 px-3 py-1 rounded text-slate-500 hover:bg-white hover:shadow-sm transition">
+                <i class="fas fa-rocket mr-1"></i> NOVO <!-- Ícone + texto -->
+            </button>
+        </div>
+    </div>
+
+    <!-- Grid principal -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <!-- Gráfico principal -->
+        <div class="col-span-1 lg:col-span-2 card bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+            
+            <h3 class="font-bold text-slate-700 mb-4 border-b pb-2 flex items-center">
+                <i class="fas fa-calendar-alt text-blue-500 mr-2"></i>
+                Início vs Conclusão (Anual) <!-- Título do gráfico -->
+            </h3>
+            
+            <div class="h-80 relative">
+                <canvas id="chartAno"></canvas> <!-- Canvas onde o Chart.js vai desenhar o gráfico -->
+            </div>
+        </div>
+
+        <!-- Gráfico de situação -->
+        <div class="card bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+            
+            <h3 class="font-bold text-slate-700 mb-4 border-b pb-2 flex items-center">
+                <i class="fas fa-tasks text-emerald-500 mr-2"></i>
+                Situação Atual <!-- Título -->
+            </h3>
+            
+            <div class="h-64 flex justify-center relative">
+                <canvas id="chartStatus"></canvas> <!-- Gráfico de status -->
+            </div>
+        </div>
+        
+        <!-- Card de atraso -->
+        <div id="cardAtraso" class="card bg-white p-4 rounded-xl shadow-sm hidden border border-red-100 cursor-pointer hover:shadow-md transition">
+            
+            <h3 class="font-bold text-slate-700 mb-4 border-b pb-2 flex items-center">
+                <i class="fas fa-clock text-red-500 mr-2"></i>
+                Desempenho de Prazos 
+                <span class="text-xs text-slate-400 font-normal ml-2">
+                    (Clique no gráfico para ver detalhes)
+                </span>
+            </h3>
+            
+            <div class="h-64 flex justify-center relative">
+                <canvas id="chartAtraso"></canvas> <!-- Gráfico de atrasos -->
+            </div>
+        </div>
+
+        <!-- Seção de obras -->
+        <div id="works-section" class="col-span-1 lg:col-span-2 card bg-white rounded-xl shadow-md border border-slate-200 hidden mt-4 mb-8">
+            
+            <!-- Cabeçalho da tabela -->
+            <div class="p-4 border-b flex justify-between items-center bg-slate-50 rounded-t-lg">
+                
+                <div>
+                    <h3 id="works-title" class="font-bold text-lg text-slate-800 flex items-center">
+                        <i class="fas fa-list mr-2 text-blue-600"></i> 
+                        Detalhamento <!-- Título -->
+                    </h3>
+                    
+                    <p class="text-xs text-slate-500 mt-1">
+                        Exibindo até 300 registros mais recentes desta categoria.
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Área com scroll -->
+            <div class="overflow-x-auto max-h-[500px] overflow-y-auto scroll-custom">
+                
+                <table class="w-full text-left text-sm">
+                    
+                    <!-- Cabeçalho da tabela -->
+                    <thead class="bg-white text-slate-500 sticky top-0 shadow-sm z-10">
+                        <tr>
+                            <th class="p-3 w-24 font-semibold border-b">ID</th> <!-- Coluna ID -->
+                            <th class="p-3 font-semibold border-b">Objeto / Descrição</th> <!-- Coluna descrição -->
+                            <th class="p-3 font-semibold border-b">Município</th> <!-- Coluna cidade -->
+                            <th class="p-3 font-semibold border-b">Situação / Prazo</th> <!-- Coluna status -->
+                            <th class="p-3 text-right font-semibold border-b">Valor</th> <!-- Coluna valor -->
+                        </tr>
+                    </thead>
+                    
+                    <!-- Corpo da tabela -->
+                    <tbody id="works-body" class="divide-y divide-slate-100 bg-white">
+                        <!-- Dados serão inseridos via JavaScript -->
+                    </tbody>
+                
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Script JS da página -->
+    <script src="{{ url_for('static', filename='js/evolucao.js') }}"></script> <!-- Lógica da página -->
+
+</body>
+</html>

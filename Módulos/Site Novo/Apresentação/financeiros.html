@@ -1,0 +1,199 @@
+<!DOCTYPE html> <!-- Define que o documento usa HTML5 -->
+<html lang="pt-br"> <!-- Início do HTML com idioma português -->
+
+<head> <!-- Cabeçalho da página -->
+    
+    <meta charset="UTF-8"> <!-- Permite uso correto de acentos -->
+    
+    <title>Investimentos - GovWorks</title> <!-- Título da aba do navegador -->
+    
+    <script src="https://cdn.tailwindcss.com"></script> <!-- Importa Tailwind CSS -->
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Importa Chart.js para gráficos -->
+    
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet"> <!-- Importa ícones -->
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"> <!-- CSS personalizado do Flask -->
+
+    <style> <!-- Estilos internos -->
+        
+        .scroll-custom::-webkit-scrollbar { width: 6px; } <!-- Largura da barra -->
+        
+        .scroll-custom::-webkit-scrollbar-track { background: #f1f5f9; } <!-- Fundo da barra -->
+        
+        .scroll-custom::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; } <!-- Parte arrastável -->
+        
+        .scroll-custom::-webkit-scrollbar-thumb:hover { background: #94a3b8; } <!-- Hover da barra -->
+    
+    </style>
+</head>
+
+<body class="bg-slate-100 p-4 font-sans text-slate-800"> <!-- Corpo com estilo Tailwind -->
+
+    <!-- Barra superior -->
+    <div class="flex flex-col md:flex-row justify-between items-center mb-6 bg-white p-3 rounded-xl shadow-sm sticky top-0 z-30">
+        
+        <!-- Lado esquerdo -->
+        <div class="flex items-center gap-4 w-full md:w-auto">
+            
+            <!-- Dropdown de navegação -->
+            <div class="relative group w-full md:w-64">
+                
+                <!-- Ícone dentro do select -->
+                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                    <i class="fas fa-bars text-slate-500"></i> <!-- Ícone de menu -->
+                </div>
+
+                <!-- Select que troca de página -->
+                <select onchange="location = this.value;" class="bg-slate-50 border border-slate-300 text-slate-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5 font-bold cursor-pointer hover:bg-slate-100 transition">
+                    
+                    <option value="/">📍 Monitoramento Geográfico</option> <!-- Página inicial -->
+                    
+                    <option value="/evolucao">📅 Evolução Temporal</option> <!-- Página evolução -->
+                    
+                    <option value="/financeiros" selected>💰 Investimentos Totais</option> <!-- Página atual -->
+                    
+                    <option value="/situacao">🚧 Situação das Obras</option> <!-- Página situação -->
+                    
+                    <option value="/classificacao">🏗️ Tipo e Natureza</option> <!-- Página classificação -->
+                
+                </select>
+            </div>
+            
+            <!-- Breadcrumb (navegação hierárquica) -->
+            <nav class="hidden md:flex text-sm bg-slate-50 px-3 py-2 rounded-md border border-slate-100">
+                
+                <ol class="inline-flex items-center space-x-1">
+                    
+                    <!-- Brasil -->
+                    <li>
+                        <button onclick="resetToCountry()" class="text-slate-600 hover:text-blue-600 font-bold flex items-center">
+                            <i class="fas fa-globe-americas mr-1"></i> BRASIL <!-- Botão para voltar ao nível país -->
+                        </button>
+                    </li>
+
+                    <!-- UF -->
+                    <li id="crumb-uf" class="hidden flex items-center">
+                        <i class="fas fa-chevron-right text-slate-300 mx-2 text-xs"></i> <!-- Separador -->
+                        <button onclick="resetToUF()" id="crumb-uf-text" class="text-slate-600 hover:text-blue-600 font-medium">--</button>
+                    </li>
+
+                    <!-- Cidade -->
+                    <li id="crumb-city" class="hidden flex items-center">
+                        <i class="fas fa-chevron-right text-slate-300 mx-2 text-xs"></i> <!-- Separador -->
+                        <span id="crumb-city-text" class="text-blue-600 font-bold">--</span>
+                    </li>
+
+                </ol>
+            </nav>
+        </div>
+        
+        <!-- Botões de fonte de dados -->
+        <div class="bg-slate-100 p-1 rounded-lg flex mt-2 md:mt-0">
+            
+            <!-- Fonte legado -->
+            <button onclick="changeSource('legado')" id="btn-legado" class="active-btn text-xs px-3 py-1 rounded shadow-sm bg-white font-bold text-blue-600 border">
+                <i class="fas fa-landmark mr-1"></i> LEGADO
+            </button>
+            
+            <!-- Fonte novo -->
+            <button onclick="changeSource('novo')" id="btn-novo" class="inactive-btn text-xs ml-1 px-3 py-1 rounded text-slate-500 hover:bg-white hover:shadow-sm transition">
+                <i class="fas fa-rocket mr-1"></i> NOVO
+            </button>
+        </div>
+    </div>
+
+    <!-- Grid principal -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        <!-- Card: valor por UF -->
+        <div id="cardUF" class="card bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+            
+            <h3 class="font-bold text-slate-700 mb-4 border-b pb-2 flex items-center">
+                <i class="fas fa-map-marked-alt text-blue-500 mr-2"></i>
+                Valor Total por UF <!-- Título -->
+            </h3>
+            
+            <div class="h-80 relative cursor-pointer">
+                <canvas id="chartUF"></canvas> <!-- Gráfico por estado -->
+            </div>
+            
+            <p class="text-xs text-slate-400 mt-2 text-center">
+                <i class="fas fa-hand-pointer"></i> Clique em um estado para ver os municípios.
+            </p>
+        </div>
+
+        <!-- Card: cidades -->
+        <div id="cardCity" class="card bg-white p-4 rounded-xl shadow-sm border border-slate-200 hidden">
+            
+            <h3 id="titleCity" class="font-bold text-slate-700 mb-4 border-b pb-2 flex items-center">
+                <i class="fas fa-city text-blue-500 mr-2"></i>
+                Top Municípios <!-- Título -->
+            </h3>
+            
+            <div class="h-80 relative cursor-pointer">
+                <canvas id="chartCity"></canvas> <!-- Gráfico cidades -->
+            </div>
+            
+            <p class="text-xs text-slate-400 mt-2 text-center">
+                <i class="fas fa-hand-pointer"></i> Clique na barra da cidade para listar as obras.
+            </p>
+        </div>
+
+        <!-- Card: órgãos -->
+        <div class="card bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+            
+            <h3 id="titleOrgao" class="font-bold text-slate-700 mb-4 border-b pb-2 flex items-center">
+                <i class="fas fa-building text-emerald-500 mr-2"></i>
+                Órgãos e Executores <!-- Título -->
+            </h3>
+            
+            <div class="h-80 flex justify-center relative">
+                <canvas id="chartOrgao"></canvas> <!-- Gráfico de órgãos -->
+            </div>
+        </div>
+
+        <!-- Tabela de obras -->
+        <div id="works-section" class="col-span-1 md:col-span-2 card bg-white rounded-xl shadow-md border border-slate-200 hidden mt-4 mb-8">
+            
+            <!-- Cabeçalho -->
+            <div class="p-4 border-b flex justify-between items-center bg-slate-50 rounded-t-lg">
+                <div>
+                    <h3 id="works-title" class="font-bold text-lg text-slate-800 flex items-center">
+                        <i class="fas fa-file-invoice-dollar mr-2 text-blue-600"></i> 
+                        Obras do Município <!-- Título -->
+                    </h3>
+                </div>
+            </div>
+            
+            <!-- Área com scroll -->
+            <div class="overflow-x-auto max-h-[500px] overflow-y-auto scroll-custom">
+                
+                <table class="w-full text-left text-sm">
+                    
+                    <!-- Cabeçalho -->
+                    <thead class="bg-white text-slate-500 sticky top-0 shadow-sm z-10">
+                        <tr>
+                            <th class="p-3 w-24 font-semibold border-b">ID</th> <!-- ID -->
+                            <th class="p-3 font-semibold border-b">Objeto / Descrição</th> <!-- Objeto -->
+                            <th class="p-3 font-semibold border-b">Situação</th> <!-- Situação -->
+                            <th class="p-3 text-right font-semibold border-b">Valor Investido</th> <!-- Valor -->
+                        </tr>
+                    </thead>
+                    
+                    <!-- Dados -->
+                    <tbody id="works-body" class="divide-y divide-slate-100 bg-white">
+                        <!-- Preenchido via JavaScript -->
+                    </tbody>
+                
+                </table>
+            </div>
+        </div>
+        
+    </div>
+
+    <!-- Script JS -->
+    <script src="{{ url_for('static', filename='js/financeiros.js') }}"></script> <!-- Lógica da página -->
+    
+</body>
+</html>

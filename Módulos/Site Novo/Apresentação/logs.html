@@ -1,0 +1,168 @@
+<!DOCTYPE html> <!-- Define o documento como HTML5 -->
+<html lang="pt-br"> <!-- Início do HTML com idioma português -->
+
+<head> <!-- Cabeçalho da página -->
+    <meta charset="UTF-8"> <!-- Permite caracteres especiais (acentos, etc.) -->
+    
+    <!-- Título da página (dinâmico com Jinja2) -->
+    <title>Logs - {{ formatar_nome(tabela) }}</title>
+    
+    <!-- Importa o CSS do Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Importa CSS personalizado do projeto -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body> <!-- Corpo da página -->
+
+<!-- Barra superior -->
+<nav class="navbar navbar-light bg-white shadow-sm mb-4"> <!-- Navbar clara com sombra -->
+    <div class="container-fluid"> <!-- Container ocupando toda largura -->
+        
+        <!-- Link para voltar ao painel principal -->
+        <a class="navbar-brand" href="/">
+            &larr; Voltar ao Painel <!-- Seta + texto -->
+        </a>
+        
+        <!-- Texto informando qual sistema está sendo exibido -->
+        <span class="navbar-text fw-bold">
+            Logs do Sistema: {{ formatar_nome(tabela) }} <!-- Nome formatado da tabela -->
+        </span>
+    </div>
+</nav>
+
+<div class="container-fluid px-4"> <!-- Container principal com padding horizontal -->
+
+    <!-- Card de filtros -->
+    <div class="card mb-4">
+        <div class="card-body py-2">
+            
+            <!-- Formulário (não envia dados, só organiza os botões) -->
+            <form class="row g-3 align-items-center">
+                
+                <div class="col-auto">
+                    <label class="fw-bold">Filtrar por Nível:</label> <!-- Label -->
+                </div>
+                
+                <div class="col-auto">
+                    
+                    <!-- Botão para mostrar todos os logs -->
+                    <a href="?nivel=TODOS" 
+                       class="btn btn-sm btn-outline-secondary 
+                       {{ 'active' if not filtro_atual or filtro_atual == 'TODOS' else '' }}">
+                        Todos
+                    </a>
+                    
+                    <!-- Botão para mostrar apenas erros -->
+                    <a href="?nivel=ERROR" 
+                       class="btn btn-sm btn-outline-danger 
+                       {{ 'active' if filtro_atual == 'ERROR' else '' }}">
+                        Apenas Erros
+                    </a>
+                    
+                    <!-- Botão para mostrar apenas informações -->
+                    <a href="?nivel=INFO" 
+                       class="btn btn-sm btn-outline-primary 
+                       {{ 'active' if filtro_atual == 'INFO' else '' }}">
+                        Infos
+                    </a>
+                    
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Card contendo a tabela de logs -->
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            
+            <!-- Tabela -->
+            <table class="table table-hover mb-0">
+                
+                <!-- Cabeçalho da tabela -->
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 5%">ID</th> <!-- Coluna ID -->
+                        <th style="width: 15%">Data/Hora</th> <!-- Data do log -->
+                        <th style="width: 10%">Nível</th> <!-- Tipo (ERROR, INFO...) -->
+                        <th style="width: 20%">Arquivo</th> <!-- Arquivo origem -->
+                        <th style="width: 50%">Mensagem</th> <!-- Mensagem do log -->
+                    </tr>
+                </thead>
+                
+                <!-- Corpo da tabela -->
+                <tbody>
+                    
+                    {% for log in logs %} <!-- Loop para percorrer cada log -->
+                    
+                    <!-- Classe dinâmica baseada no nível do log -->
+                    <tr class="log-row-{{ log.nivel }}">
+                        
+                        <!-- ID do log -->
+                        <td>{{ log.id }}</td>
+                        
+                        <!-- Data e hora -->
+                        <td class="timestamp">{{ log.data_hora }}</td>
+                        
+                        <!-- Nível do log com cores -->
+                        <td>
+                            {% if log.nivel == 'ERROR' %} <!-- Se for erro -->
+                                <span class="badge bg-danger">ERROR</span>
+                            
+                            {% elif log.nivel == 'WARNING' %} <!-- Se for aviso -->
+                                <span class="badge bg-warning text-dark">WARN</span>
+                            
+                            {% else %} <!-- Caso contrário (INFO) -->
+                                <span class="badge bg-primary">INFO</span>
+                            {% endif %}
+                        </td>
+                        
+                        <!-- Nome do arquivo (com truncamento visual) -->
+                        <td class="text-truncate" 
+                            style="max-width: 200px;" 
+                            title="{{ log.arquivo_origem }}"> <!-- Tooltip com nome completo -->
+                            
+                            {{ log.arquivo_origem }}
+                        </td>
+                        
+                        <!-- Mensagem do log -->
+                        <td>
+                            
+                            {% if '\n' in log.mensagem %} <!-- Se for multilinha -->
+                                
+                                <!-- Indica erro com stacktrace -->
+                                <div class="mb-1 text-danger fw-bold">
+                                    Erro Multilinha Detectado:
+                                </div>
+                                
+                                <!-- Exibe preservando formatação -->
+                                <pre class="stacktrace">{{ log.mensagem }}</pre>
+                            
+                            {% else %} <!-- Mensagem simples -->
+                                {{ log.mensagem }}
+                            {% endif %}
+                            
+                        </td>
+                    </tr>
+                    
+                    {% else %} <!-- Caso não existam logs -->
+                    
+                    <tr>
+                        <td colspan="5" class="text-center py-5 text-muted">
+                            Nenhum log encontrado com os filtros atuais.
+                        </td>
+                    </tr>
+                    
+                    {% endfor %} <!-- Fim do loop -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Importa o JavaScript do Bootstrap (para interatividade) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+</body> <!-- Fim do body -->
+</html> <!-- Fim do HTML -->

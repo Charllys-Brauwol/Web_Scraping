@@ -1,0 +1,159 @@
+<!DOCTYPE html> <!-- Define HTML5 -->
+<html lang="pt-br"> <!-- Define idioma português do Brasil -->
+
+<head> <!-- Cabeçalho -->
+    <meta charset="UTF-8"> <!-- Codificação UTF-8 -->
+    <title>Raio-X da Obra</title> <!-- Título da aba -->
+
+    <script src="https://cdn.tailwindcss.com"></script> <!-- Importa Tailwind CSS -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Importa Chart.js -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet"> <!-- Ícones -->
+
+    <script> const OBRA_ID = "{{ id_obra }}"; </script> <!-- Variável JS com ID da obra (Flask) -->
+</head>
+
+<body class="bg-slate-100 p-4 md:p-8 font-sans text-slate-800"> <!-- Corpo com estilos -->
+
+    <div id="loading" class="text-center py-20"> <!-- Tela de carregamento -->
+        <i class="fas fa-spinner fa-spin text-4xl text-blue-600 mb-4"></i> <!-- Ícone animado -->
+        <p class="text-slate-500 font-semibold">Buscando dados no banco...</p> <!-- Mensagem -->
+    </div>
+
+    <div id="content" class="max-w-7xl mx-auto hidden"> <!-- Conteúdo principal (inicialmente oculto) -->
+        
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-6 border border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center"> <!-- Cabeçalho da obra -->
+            
+            <div> <!-- Informações principais -->
+                <span class="bg-slate-100 text-slate-500 text-xs font-mono px-2 py-1 rounded border mb-2 inline-block">ID: {{ id_obra }}</span> <!-- ID -->
+                <h1 id="txt-nome" class="text-2xl font-bold text-slate-800 leading-tight">-</h1> <!-- Nome da obra -->
+                <p id="txt-local" class="text-sm text-slate-500 mt-1"><i class="fas fa-map-marker-alt mr-1 text-red-500"></i> -</p> <!-- Local -->
+            </div>
+
+            <div class="mt-4 md:mt-0 text-right"> <!-- Status -->
+                <span id="badge-situacao" class="px-4 py-2 rounded-full text-sm font-bold bg-blue-100 text-blue-700">-</span> <!-- Situação -->
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6"> <!-- Layout principal -->
+
+            <div class="space-y-6"> <!-- Coluna esquerda -->
+
+                <div class="bg-white rounded-xl shadow-sm p-5 border border-slate-200"> <!-- Card identificação -->
+                    <h3 class="font-bold text-slate-700 border-b pb-2 mb-3"><i class="fas fa-info-circle text-blue-500 mr-2"></i>Identificação Básica</h3>
+                    <ul class="text-sm space-y-3">
+                        <li><span class="text-slate-400 block text-xs uppercase">Executor</span><span id="txt-executor" class="font-medium">-</span></li> <!-- Executor -->
+                        <li><span class="text-slate-400 block text-xs uppercase">Órgão Financiador</span><span id="txt-financiador" class="font-medium">-</span></li> <!-- Financiador -->
+                    </ul>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm p-5 border border-slate-200"> <!-- Card impacto -->
+                    <h3 class="font-bold text-slate-700 border-b pb-2 mb-3"><i class="fas fa-users text-purple-500 mr-2"></i>Impacto Social</h3>
+                    <ul class="text-sm space-y-3">
+                        <li><span class="text-slate-400 block text-xs uppercase">Função Social</span><span id="txt-funcao" class="font-medium">-</span></li> <!-- Função -->
+                        <li><span class="text-slate-400 block text-xs uppercase">Público Beneficiado</span><span id="txt-publico" class="font-medium">-</span></li> <!-- Público -->
+                    </ul>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm p-5 border border-slate-200"> <!-- Card cronograma -->
+                    <h3 class="font-bold text-slate-700 border-b pb-2 mb-3"><i class="fas fa-calendar-alt text-orange-500 mr-2"></i>Cronograma</h3>
+                    <ul class="text-sm space-y-3">
+                        <li><span class="text-slate-400 block text-xs uppercase">Data Inicial</span><span id="txt-dt-inicio" class="font-medium">-</span></li> <!-- Início -->
+                        <li><span class="text-slate-400 block text-xs uppercase">Data Final</span><span id="txt-dt-fim" class="font-medium">-</span></li> <!-- Fim -->
+                    </ul>
+                </div>
+
+            </div>
+
+            <div class="lg:col-span-2 space-y-6"> <!-- Coluna direita -->
+
+                <div class="bg-white rounded-xl shadow-sm p-5 border border-slate-200"> <!-- Execução -->
+                    <h3 class="font-bold text-slate-700 border-b pb-2 mb-4"><i class="fas fa-chart-line text-emerald-500 mr-2"></i>Execução Física x Financeira</h3>
+
+                    <div class="mb-5"> <!-- Barra física -->
+                        <div class="flex justify-between text-sm mb-1">
+                            <span class="font-semibold text-slate-700">Avanço Físico (Obra)</span>
+                            <span id="lbl-fisico" class="font-bold text-emerald-600">0%</span>
+                        </div>
+                        <div class="w-full bg-slate-100 rounded-full h-3 border border-slate-200">
+                            <div id="bar-fisico" class="bg-emerald-500 h-3 rounded-full transition-all duration-1000" style="width: 0%"></div> <!-- Progresso -->
+                        </div>
+                    </div>
+
+                    <div> <!-- Barra financeira -->
+                        <div class="flex justify-between text-sm mb-1">
+                            <span class="font-semibold text-slate-700">Avanço Financeiro (Pagamentos)</span>
+                            <span id="lbl-finan" class="font-bold text-blue-600">0%</span>
+                        </div>
+                        <div class="w-full bg-slate-100 rounded-full h-3 border border-slate-200">
+                            <div id="bar-finan" class="bg-blue-500 h-3 rounded-full transition-all duration-1000" style="width: 0%"></div> <!-- Progresso -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4"> <!-- Cards financeiros -->
+
+                    <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 text-center">
+                        <span class="text-slate-500 text-xs uppercase block mb-1">Valor Previsto</span>
+                        <span id="txt-v-previsto" class="text-xl font-bold text-slate-800">R$ 0,00</span> <!-- Valor previsto -->
+                    </div>
+
+                    <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 text-center">
+                        <span class="text-slate-500 text-xs uppercase block mb-1">Valor Pago</span>
+                        <span id="txt-v-empenhado" class="text-xl font-bold text-slate-700">R$ 0,00</span> <!-- Pago -->
+                    </div>
+
+                    <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 text-center">
+                        <span class="text-slate-500 text-xs uppercase block mb-1">Resto a Pagar</span>
+                        <span id="txt-v-desembolso" class="text-xl font-bold text-blue-600">R$ 0,00</span> <!-- Restante -->
+                    </div>
+
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm p-5 border border-slate-200"> <!-- Contratos -->
+                    <h3 class="font-bold text-slate-700 border-b pb-2 mb-3"><i class="fas fa-file-signature text-slate-500 mr-2"></i>Contratos e Instrumentos</h3>
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div><span class="text-slate-400 block text-xs uppercase">Modalidade</span><span id="txt-modalidade" class="font-medium">-</span></div> <!-- Modalidade -->
+                        <div><span class="text-slate-400 block text-xs uppercase">Fornecedor Principal</span><span id="txt-fornecedor" class="font-medium">-</span></div> <!-- Fornecedor -->
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mb-8"> <!-- Tabela gastos -->
+
+            <div class="p-5 border-b bg-slate-50 flex justify-between items-center"> <!-- Cabeçalho -->
+                <h3 class="font-bold text-slate-800"><i class="fas fa-shopping-cart text-blue-600 mr-2"></i>Tabela de Gastos e Compras</h3>
+                <span class="text-xs bg-yellow-100 text-yellow-800 font-bold px-2 py-1 rounded">Requer Banco de Notas Fiscais</span>
+            </div>
+
+            <div class="p-4 border-b flex justify-center h-48 bg-white"> <!-- Gráfico -->
+                <canvas id="chartDespesas"></canvas>
+            </div>
+
+            <div class="overflow-x-auto"> <!-- Tabela responsiva -->
+                <table class="w-full text-left text-sm">
+
+                    <thead class="bg-slate-100 text-slate-500">
+                        <tr>
+                            <th class="p-3 font-semibold">Item / Serviço</th>
+                            <th class="p-3 font-semibold">Natureza</th>
+                            <th class="p-3 font-semibold">Fornecedor</th>
+                            <th class="p-3 font-semibold text-right">Qtd</th>
+                            <th class="p-3 font-semibold text-right">Preço Un.</th>
+                            <th class="p-3 font-semibold text-right">Total</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="table-gastos" class="divide-y divide-slate-100">
+                    </tbody> <!-- Dados dinâmicos -->
+
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/obra.js') }}"></script> <!-- JS da página -->
+</body>
+
+</html> <!-- Fim -->
